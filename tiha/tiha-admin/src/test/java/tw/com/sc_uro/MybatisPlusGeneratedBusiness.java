@@ -58,7 +58,7 @@ public class MybatisPlusGeneratedBusiness {
     /**
      * 包名(自行替換,通常三層中取前兩層,例:com.example.demo,取前兩層)
      */
-    private static final String PARENT = "tw.org.organ";
+    private static final String PARENT = "tw.com.tiha";
 
     /**
      * 业务名(自行替換,通常三層中取最後一層,代表某個業務功能)

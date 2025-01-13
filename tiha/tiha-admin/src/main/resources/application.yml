@@ -22,7 +22,7 @@ spring:
     driver-class-name: org.mariadb.jdbc.Driver
     # 配置URL,mysql8.0剛出時不配置?serverTimezone=Asia/Taipei,會報啟動錯誤
     # 現在好像解決了
-    url: jdbc:mariadb://192.168.56.1:3306/organ?
+    url: jdbc:mariadb://192.168.56.1:3306/tiha?
     # 配置連接用戶
     username: root
     # 配置用戶密碼
@@ -133,8 +133,8 @@ springdoc:
       #  文檔群組名default, 匹配路徑為根路徑任意開頭映射路徑(Controller),掃描包為com.example
     - group: 'default'
       paths-to-match: '/**'
-      # 掃描包  tw.org.organ
-      packages-to-scan: tw.org.organ
+      # 掃描包  tw.com.tiha
+      packages-to-scan: tw.com.tiha
       
 #      #  以下為多個model的Controller層文檔分層,有需要再開啟
 #      #  文檔群組名common, 匹配路徑為common開頭的任意映射路徑(Controller),掃描包為com.example
@@ -158,7 +158,7 @@ minio:
   #minio服務所在地址,這個指的是server不是控制台
   endpoint: http://192.168.56.1:9000
   #預設儲存桶名稱,這是為了避免上傳時沒選定Bucket造成錯誤
-  bucketName: organ
+  bucketName: tiha
   #訪問的key,預設是帳號,除非有去特別設置Access key
   accessKey: admin
   #訪問的密鑰,預設是密碼,除非有去特別設置Access key

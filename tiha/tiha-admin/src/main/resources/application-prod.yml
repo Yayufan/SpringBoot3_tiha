@@ -7,7 +7,7 @@ spring:
     driver-class-name: org.mariadb.jdbc.Driver
     # 配置URL,mysql8.0剛出時不配置?serverTimezone=Asia/Taipei,會報啟動錯誤
     # 現在好像解決了
-    url: jdbc:mariadb://localhost:3306/organ?
+    url: jdbc:mariadb://localhost:3306/tiha?
     # 配置連接用戶
     username: root
     # 配置用戶密碼
@@ -20,7 +20,7 @@ minio:
   #minio服務所在地址,這個指的是server不是控制台
   endpoint: http://localhost:9000
   #預設儲存桶名稱,這是為了避免上傳時沒選定Bucket造成錯誤
-  bucketName: organ
+  bucketName: tiha
   #訪問的key,預設是帳號,除非有去特別設置Access key
   accessKey: admin
   #訪問的密鑰,預設是密碼,除非有去特別設置Access key
