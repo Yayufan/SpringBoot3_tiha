@@ -38,6 +38,8 @@ public class ArticleAttachment implements Serializable {
     @Schema(description = "檔名")
     @TableField("name")
     private String name;
+    
+    
 
     @Schema(description = "檔案類型")
     @TableField("type")
