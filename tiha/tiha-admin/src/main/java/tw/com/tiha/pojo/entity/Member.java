@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
@@ -62,53 +63,52 @@ public class Member implements Serializable {
 	@Schema(description = "職稱")
 	@TableField("job_title")
 	private String jobTitle;
-	
+
 	@Schema(description = "性別")
 	@TableField("gender")
 	private String gender;
-	
+
 	@Schema(description = "性別補充")
 	@TableField("gender_other")
 	private String genderOther;
-	
+
 	@Schema(description = "國民身分證字號/居留證")
 	@TableField("id_card")
 	private String idCard;
-	
+
 	@JsonFormat(pattern = "yyyy-MM-dd")
 	@Schema(description = "出生年月日")
 	@TableField(value = "birthday")
 	private LocalDate birthday;
-	
+
 	@Schema(description = "聯絡地址")
 	@TableField("contact_address")
 	private String contactAddress;
-	
-	
+
 	@Schema(description = "電話號碼")
 	@TableField("phone")
 	private String phone;
-	
+
 	@Schema(description = "狀態,0為待審核,1為審核通過,2為審核不通過")
 	@TableField("status")
 	private String status;
 
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	@Schema(description = "創建時間")
-	@TableField(value = "create_time")
+	@TableField(value = "create_time", fill = FieldFill.INSERT)
 	private LocalDateTime createTime;
 
 	@Schema(description = "創建者")
-	@TableField("create_by")
+	@TableField(value = "create_by", fill = FieldFill.INSERT)
 	private String createBy;
 
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	@Schema(description = "最後更新時間")
-	@TableField(value = "update_time")
+	@TableField(value = "update_time", fill = FieldFill.UPDATE)
 	private LocalDateTime updateTime;
 
 	@Schema(description = "最後更新者")
-	@TableField("update_by")
+	@TableField(value = "update_by", fill = FieldFill.UPDATE)
 	private String updateBy;
 
 	@Schema(description = "邏輯刪除(0為存在,1為刪除)")
