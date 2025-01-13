@@ -90,9 +90,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 	@Override
 	public Long insertMember(InsertMemberDTO insertMemberDTO) {
-		// TODO Auto-generated method stub
 		Member member = memberConvert.insertDTOToEntity(insertMemberDTO);
-		member.setStatus(MemberReviewEnum.APPROVED.getCode());
 		baseMapper.insert(member);
 		return member.getMemberId();
 	}

@@ -1,6 +1,7 @@
 package tw.com.tiha.pojo.entity;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -61,6 +62,28 @@ public class Member implements Serializable {
 	@Schema(description = "職稱")
 	@TableField("job_title")
 	private String jobTitle;
+	
+	@Schema(description = "性別")
+	@TableField("gender")
+	private String gender;
+	
+	@Schema(description = "性別補充")
+	@TableField("gender_other")
+	private String genderOther;
+	
+	@Schema(description = "國民身分證字號/居留證")
+	@TableField("id_card")
+	private String idCard;
+	
+	@JsonFormat(pattern = "yyyy-MM-dd")
+	@Schema(description = "出生年月日")
+	@TableField(value = "birthday")
+	private LocalDate birthday;
+	
+	@Schema(description = "聯絡地址")
+	@TableField("contact_address")
+	private String contactAddress;
+	
 	
 	@Schema(description = "電話號碼")
 	@TableField("phone")

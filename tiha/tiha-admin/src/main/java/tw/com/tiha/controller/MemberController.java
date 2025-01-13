@@ -1,8 +1,13 @@
 package tw.com.tiha.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import org.redisson.api.RedissonClient;
 import org.simpleframework.xml.core.Validate;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.wf.captcha.SpecCaptcha;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import io.swagger.v3.oas.annotations.Operation;
@@ -55,7 +61,26 @@ import tw.com.tiha.utils.R;
 @RequestMapping("/member")
 public class MemberController {
 
+	@Qualifier("businessRedissonClient")
+	private final RedissonClient redissonClient;
 	private final MemberService memberService;
+
+	@GetMapping("/captcha")
+	@Operation(summary = "獲取驗證碼")
+	public R<HashMap<Object, Object>> captcha() {
+		SpecCaptcha specCaptcha = new SpecCaptcha(130, 50, 5);
+		String verCode = specCaptcha.text().toLowerCase();
+		String key = "Captcha:" + UUID.randomUUID().toString();
+		// 明確調用String類型的Bucket,存入String類型的Value 進redis並設置過期時間為10分鐘
+		redissonClient.<String>getBucket(key).set(verCode, 10, TimeUnit.MINUTES);
+
+		// 将key和base64返回给前端
+		HashMap<Object, Object> hashMap = new HashMap<>();
+		hashMap.put("key", key);
+		hashMap.put("image", specCaptcha.toBase64());
+
+		return R.ok(hashMap);
+	}
 
 	@GetMapping("{id}")
 	@Operation(summary = "查詢單一會員")
@@ -105,13 +130,19 @@ public class MemberController {
 		return R.ok(memberCount);
 	}
 
-	@Operation(summary = "新增會員")
-	@Parameters({
-			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
-	@SaCheckLogin
+	@Operation(summary = "新增會員 - 一般註冊")
 	@PostMapping
 	public R<Long> saveMember(@Validated @RequestBody InsertMemberDTO insertMemberDTO) {
+		// 透過key 獲取redis中的驗證碼
+		String redisCode = redissonClient.<String>getBucket(insertMemberDTO.getVerificationKey()).get();
+		String userVerificationCode = insertMemberDTO.getVerificationCode();
+
+		// 判斷驗證碼是否正確,如果不正確就直接返回前端,不做後續的業務處理
+		if (userVerificationCode == null || !redisCode.equals(userVerificationCode.trim().toLowerCase())) {
+			return R.fail("驗證碼不正確");
+		}
 		Long memberId = memberService.insertMember(insertMemberDTO);
+
 		return R.ok(memberId);
 
 	}
@@ -199,12 +230,12 @@ public class MemberController {
 		}
 		return R.fail(401, "沒有此信箱");
 	}
-	
+
 	@Operation(summary = "確認登入狀態")
 	@Parameters({
 			@Parameter(name = "Authorization-member", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER), })
 	@GetMapping("check-login")
-	public R<Boolean> checkLogin(){
+	public R<Boolean> checkLogin() {
 		boolean loginStatus = StpKit.MEMBER.isLogin();
 		return R.ok(loginStatus);
 	}
