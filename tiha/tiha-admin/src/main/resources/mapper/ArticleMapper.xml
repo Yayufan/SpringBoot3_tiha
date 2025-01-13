@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tw.org.organ.mapper.ArticleMapper">
+
+    <!-- 查詢所有文章瀏覽量總數，這邊要注意is_deleted 要自己手動加入,邏輯刪除是mybatis plus的, mybatis xml預設沒支援 -->
+    <select id="getViewCount" resultType="java.lang.Long">
+        SELECT IFNULL(SUM(views), 0)
+        FROM article
+        WHERE is_deleted = '0'
+    </select>
+
+
+</mapper>
