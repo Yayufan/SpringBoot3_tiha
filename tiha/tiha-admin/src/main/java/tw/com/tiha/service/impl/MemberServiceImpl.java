@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -31,7 +32,6 @@ import tw.com.tiha.pojo.DTO.UpdateMemberDTO;
 import tw.com.tiha.pojo.VO.MemberVO;
 import tw.com.tiha.pojo.entity.Member;
 import tw.com.tiha.pojo.excelPojo.MemberExcel;
-import tw.com.tiha.pojo.excelPojo.OrganDonationConsentExcel;
 import tw.com.tiha.saToken.StpKit;
 import tw.com.tiha.service.MemberService;
 
@@ -54,7 +54,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 	@Override
 	public IPage<Member> getAllMember(Page<Member> page) {
-		//越新的擺越前面
+		// 越新的擺越前面
 		LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
 		memberQueryWrapper.orderByDesc(Member::getMemberId);
 
@@ -63,10 +63,16 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 	}
 
 	@Override
-	public IPage<Member> getAllMemberByStatus(Page<Member> page, String status) {
-		// 篩選狀態,越新的擺越前面
+	public IPage<Member> getAllMemberByStatus(Page<Member> page, String status, String queryText) {
+
 		LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
-		memberQueryWrapper.eq(Member::getStatus, status).orderByDesc(Member::getMemberId);
+
+		// 如果 status 不為空字串、空格字串、Null 時才加入篩選條件
+		memberQueryWrapper.eq(StringUtils.isNotBlank(status), Member::getStatus, status)
+				// 當 queryText 不為空字串、空格字串、Null 時才加入篩選條件
+				.and(StringUtils.isNotBlank(queryText), wrapper -> wrapper.like(Member::getName, queryText).or()
+						.like(Member::getIdCard, queryText).or().like(Member::getPhone, queryText).or())
+				.orderByDesc(Member::getMemberId);
 
 		Page<Member> memberList = baseMapper.selectPage(page, memberQueryWrapper);
 		return memberList;
@@ -317,7 +323,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 			return memberConvert.entityToExcel(member);
 		}).collect(Collectors.toList());
 
-		EasyExcel.write(response.getOutputStream(), OrganDonationConsentExcel.class).sheet("清單").doWrite(excelData);
+		EasyExcel.write(response.getOutputStream(), MemberExcel.class).sheet("清單").doWrite(excelData);
 
 	}
 

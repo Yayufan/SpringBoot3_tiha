@@ -24,7 +24,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wf.captcha.SpecCaptcha;
 
-import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -107,17 +106,21 @@ public class MemberController {
 	public R<IPage<Member>> getAllMember(@RequestParam Integer page, @RequestParam Integer size) {
 		Page<Member> pageInfo = new Page<>(page, size);
 		IPage<Member> memberList = memberService.getAllMember(pageInfo);
-
 		return R.ok(memberList);
 	}
 
 	@GetMapping("pagination-by-status")
-	@Operation(summary = "根據會員狀態,查詢符合的所有會員(分頁)")
 	@SaCheckRole("super-admin")
-	public R<IPage<Member>> getAllMemberByStatus(@RequestParam Integer page, @RequestParam Integer size,
-			@RequestParam String status) {
+	@Operation(summary = "根據會員狀態/查詢文字,查詢符合的所有器捐同意書(分頁)")
+	public R<IPage<Member>> getAllMemberByQuery(@RequestParam Integer page,
+			@RequestParam Integer size, @RequestParam(required = false) String status,
+			@RequestParam(required = false) String queryText) {
 		Page<Member> pageInfo = new Page<>(page, size);
-		IPage<Member> memberList = memberService.getAllMemberByStatus(pageInfo, status);
+
+		IPage<Member> memberList;
+
+		memberList = memberService.getAllMemberByStatus(pageInfo, status,
+				queryText);
 
 		return R.ok(memberList);
 	}

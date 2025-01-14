@@ -42,13 +42,13 @@ public interface MemberService extends IService<Member> {
 	IPage<Member> getAllMember(Page<Member> page);
 	
 	/**
-	 * 獲取符合狀態的所有會員資料(分頁)
+	 * 獲取符合查詢條件的所有會員資料(分頁)
 	 * 
 	 * @param page
 	 * @param status
 	 * @return
 	 */
-	IPage<Member> getAllMemberByStatus(Page<Member> page,String status);
+	IPage<Member> getAllMemberByStatus(Page<Member> page,String status,String queryText);
 
 	/**
 	 * 獲取單一會員資料
