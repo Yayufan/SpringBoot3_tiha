@@ -24,6 +24,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wf.captcha.SpecCaptcha;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -91,6 +92,7 @@ public class MemberController {
 
 	@GetMapping
 	@Operation(summary = "查詢所有會員")
+	@SaCheckRole("super-admin")
 	public R<List<Member>> getAllMember() {
 
 		List<Member> memberList = memberService.getAllMember();
@@ -99,6 +101,7 @@ public class MemberController {
 
 	@GetMapping("pagination")
 	@Operation(summary = "查詢所有會員(分頁)")
+	@SaCheckRole("super-admin")
 	public R<IPage<Member>> getAllMember(@RequestParam Integer page, @RequestParam Integer size) {
 		Page<Member> pageInfo = new Page<>(page, size);
 		IPage<Member> memberList = memberService.getAllMember(pageInfo);
@@ -108,6 +111,7 @@ public class MemberController {
 
 	@GetMapping("pagination-by-status")
 	@Operation(summary = "根據會員狀態,查詢符合的所有會員(分頁)")
+	@SaCheckRole("super-admin")
 	public R<IPage<Member>> getAllMemberByStatus(@RequestParam Integer page, @RequestParam Integer size,
 			@RequestParam String status) {
 		Page<Member> pageInfo = new Page<>(page, size);
@@ -150,7 +154,7 @@ public class MemberController {
 	@Operation(summary = "更新會員")
 	@Parameters({
 			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
-	@SaCheckLogin
+	@SaCheckRole("super-admin")
 	@PutMapping
 	public R<Void> updateMember(@Validated @RequestBody UpdateMemberDTO updateMemberDTO) {
 		memberService.updateMember(updateMemberDTO);
@@ -161,7 +165,7 @@ public class MemberController {
 	@Operation(summary = "批量更新會員")
 	@Parameters({
 			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
-	@SaCheckLogin
+	@SaCheckRole("super-admin")
 	@PutMapping("batch")
 	public R<Void> batchUpdateMember(@Validated @RequestBody @NotEmpty List<UpdateMemberDTO> updateMemberDTOList) {
 		System.out.println("觸發批量更新");
@@ -173,7 +177,7 @@ public class MemberController {
 	@Operation(summary = "刪除會員")
 	@Parameters({
 			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
-	@SaCheckLogin
+	@SaCheckRole("super-admin")
 	@DeleteMapping("{id}")
 	public R<Void> deleteMember(@PathVariable("id") Long memberId) {
 		memberService.deleteMember(memberId);
@@ -183,7 +187,7 @@ public class MemberController {
 	@Operation(summary = "批量刪除會員")
 	@Parameters({
 			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
-	@SaCheckLogin
+	@SaCheckRole("super-admin")
 	@DeleteMapping()
 	public R<Void> batchDeleteMember(@Valid @NotNull @RequestBody List<Long> memberIdList) {
 		memberService.deleteMember(memberIdList);
