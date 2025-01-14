@@ -12,11 +12,11 @@ public class MemberLoginInfo {
 	@Schema(description = "社交帳號使用者ID")
 	private String providerUserId;
 	
-	@Schema(description = "信箱")
-	private String email;
+	@Schema(description = "身分證字號")
+	private String idCard;
 
-	@Schema(description = "密碼")
-	private String password;
+	@Schema(description = "聯絡電話")
+	private String phone;
 	
 	
 }

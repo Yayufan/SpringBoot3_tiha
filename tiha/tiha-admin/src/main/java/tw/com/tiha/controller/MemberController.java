@@ -1,5 +1,6 @@
 package tw.com.tiha.controller;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +32,7 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -242,6 +244,13 @@ public class MemberController {
 	public R<Boolean> checkLogin() {
 		boolean loginStatus = StpKit.MEMBER.isLogin();
 		return R.ok(loginStatus);
+	}
+	
+	@Operation(summary = "下載同意書excel列表")
+	@SaCheckRole("super-admin")
+	@GetMapping("/download-excel")
+	public void downloadExcel(HttpServletResponse response) throws IOException {
+		memberService.downloadExcel(response);
 	}
 
 }

@@ -1,5 +1,6 @@
 package tw.com.tiha.service;
 
+import java.io.IOException;
 import java.util.List;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -7,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletResponse;
 import tw.com.tiha.pojo.DTO.InsertMemberDTO;
 import tw.com.tiha.pojo.DTO.MemberLoginInfo;
 import tw.com.tiha.pojo.DTO.ProviderRegisterDTO;
@@ -137,4 +139,13 @@ public interface MemberService extends IService<Member> {
 	 */
 	Member forgetPassword(String email) throws MessagingException;
 
+	
+	/**
+	 * 下載同意書的Excel列表
+	 * 
+	 * @param response
+	 * @throws IOException 
+	 */
+	void downloadExcel(HttpServletResponse response) throws IOException;
+	
 }

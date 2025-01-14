@@ -1,12 +1,16 @@
 package tw.com.tiha.service.impl;
 
+import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -16,9 +20,9 @@ import com.google.common.base.Strings;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import tw.com.tiha.convert.MemberConvert;
-import tw.com.tiha.enums.MemberReviewEnum;
 import tw.com.tiha.mapper.MemberMapper;
 import tw.com.tiha.pojo.DTO.InsertMemberDTO;
 import tw.com.tiha.pojo.DTO.MemberLoginInfo;
@@ -26,6 +30,8 @@ import tw.com.tiha.pojo.DTO.ProviderRegisterDTO;
 import tw.com.tiha.pojo.DTO.UpdateMemberDTO;
 import tw.com.tiha.pojo.VO.MemberVO;
 import tw.com.tiha.pojo.entity.Member;
+import tw.com.tiha.pojo.excelPojo.MemberExcel;
+import tw.com.tiha.pojo.excelPojo.OrganDonationConsentExcel;
 import tw.com.tiha.saToken.StpKit;
 import tw.com.tiha.service.MemberService;
 
@@ -48,16 +54,19 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 	@Override
 	public IPage<Member> getAllMember(Page<Member> page) {
-		// TODO Auto-generated method stub
-		Page<Member> memberList = baseMapper.selectPage(page, null);
+		//越新的擺越前面
+		LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
+		memberQueryWrapper.orderByDesc(Member::getMemberId);
+
+		Page<Member> memberList = baseMapper.selectPage(page, memberQueryWrapper);
 		return memberList;
 	}
 
 	@Override
 	public IPage<Member> getAllMemberByStatus(Page<Member> page, String status) {
-		// TODO Auto-generated method stub
+		// 篩選狀態,越新的擺越前面
 		LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
-		memberQueryWrapper.eq(Member::getStatus, status);
+		memberQueryWrapper.eq(Member::getStatus, status).orderByDesc(Member::getMemberId);
 
 		Page<Member> memberList = baseMapper.selectPage(page, memberQueryWrapper);
 		return memberList;
@@ -97,7 +106,6 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 	@Override
 	public void updateMember(UpdateMemberDTO updateMemberDTO) {
-		// TODO Auto-generated method stub
 		Member member = memberConvert.updateDTOToEntity(updateMemberDTO);
 		baseMapper.updateById(member);
 
@@ -176,13 +184,13 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		} else {
 			// 當確定不是提供商ID登入的,那我們就要驗證Email和Password 是不是正確
 			// 先校驗email 和 password是否不為null && 空字串
-			if (!Strings.isNullOrEmpty(memberLoginInfo.getEmail())
-					&& !Strings.isNullOrEmpty(memberLoginInfo.getPassword())) {
+			if (!Strings.isNullOrEmpty(memberLoginInfo.getIdCard())
+					&& !Strings.isNullOrEmpty(memberLoginInfo.getPhone())) {
 
 				// 去資料庫找有沒有符合這個供應商id的資料
 				LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
-				memberQueryWrapper.eq(Member::getEmail, memberLoginInfo.getEmail()).eq(Member::getPassword,
-						memberLoginInfo.getPassword());
+				memberQueryWrapper.eq(Member::getIdCard, memberLoginInfo.getIdCard()).eq(Member::getPhone,
+						memberLoginInfo.getPhone());
 
 				Member member = baseMapper.selectOne(memberQueryWrapper);
 
@@ -218,11 +226,11 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 	public Member forgetPassword(String email) throws MessagingException {
 		// TODO Auto-generated method stub
 
-		//透過Email查詢Member
+		// 透過Email查詢Member
 		LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
 		memberQueryWrapper.eq(Member::getEmail, email);
 
-		//獲得查詢結果
+		// 獲得查詢結果
 		Member member = baseMapper.selectOne(memberQueryWrapper);
 
 		/**
@@ -234,13 +242,13 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		 */
 
 		if (member != null) {
-			
-			//查詢他有沒有第三方社群帳號,如果有也是直接返回
-			if(member.getProviderUserId() != null) {
+
+			// 查詢他有沒有第三方社群帳號,如果有也是直接返回
+			if (member.getProviderUserId() != null) {
 				return null;
 			}
 
-			//開始編寫信件,準備寄給一般註冊者找回密碼的信
+			// 開始編寫信件,準備寄給一般註冊者找回密碼的信
 			try {
 				MimeMessage message = mailSender.createMimeMessage();
 				// message.setHeader("Content-Type", "text/html; charset=UTF-8");
@@ -293,6 +301,23 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		} else {
 			return null;
 		}
+
+	}
+
+	@Override
+	public void downloadExcel(HttpServletResponse response) throws IOException {
+		response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+		response.setCharacterEncoding("utf-8");
+		// 这里URLEncoder.encode可以防止中文乱码 ， 和easyexcel没有关系
+		String fileName = URLEncoder.encode("測試", "UTF-8").replaceAll("\\+", "%20");
+		response.setHeader("Content-disposition", "attachment;filename*=" + fileName + ".xlsx");
+
+		List<Member> allMember = this.getAllMember();
+		List<MemberExcel> excelData = allMember.stream().map(member -> {
+			return memberConvert.entityToExcel(member);
+		}).collect(Collectors.toList());
+
+		EasyExcel.write(response.getOutputStream(), OrganDonationConsentExcel.class).sheet("清單").doWrite(excelData);
 
 	}
 
