@@ -49,7 +49,7 @@ public class EmailTemplateController {
 
 	@GetMapping("{id}")
 	@Operation(summary = "查詢單一信件模板圖片")
-	public R<EmailTemplate> getEmailTemplate(@PathVariable Long emailTemplateId) {
+	public R<EmailTemplate> getEmailTemplate(@PathVariable("id") Long emailTemplateId) {
 		EmailTemplate emailTemplate = emailTemplateService.getEmailTemplate(emailTemplateId);
 		return R.ok(emailTemplate);
 	}
