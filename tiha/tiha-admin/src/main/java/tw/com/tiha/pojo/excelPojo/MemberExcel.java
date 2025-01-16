@@ -18,7 +18,7 @@ import lombok.Data;
 public class MemberExcel {
 	
 	@ExcelProperty("簽署者ID")
-	private Long memberId;
+	private String memberId;
 
 //	@ExcelProperty("社交帳號登入提供商")
 //	private String provider;
@@ -28,30 +28,39 @@ public class MemberExcel {
 
 	@ExcelProperty("會員姓名")
 	private String name;
+	
+	@ExcelProperty("生日")
+    private String birthday;
+
+	@ExcelProperty("身分證字號")
+	private String idCard;
+	
+	@ExcelProperty("性別")
+	private String gender;
+	
+	@ExcelProperty("性別補充")
+	private String genderOther;
+
+	@ExcelProperty("服務單位")
+	private String department;
+	
+	@ExcelProperty("職稱")
+	private String jobTitle;
+	
+	@ExcelProperty("聯絡地址")
+    private String contactAddress;
+	
+
+	@ExcelProperty("連絡電話")
+    private String phone;
 
 	@ExcelProperty("會員信箱")
 	private String email;
-
+	
 //	@ExcelProperty("會員密碼")
 //	private String password;
 	
 	
-	@ExcelProperty("會員單位")
-	private String department;
-
-	@ExcelProperty("職稱")
-	private String jobTitle;
-
-	@ExcelProperty("性別")
-	private String gender;
-
-	@ExcelProperty("性別補充")
-	private String genderOther;
-
-	@ExcelProperty("身分證字號")
-	private String idCard;
-
-
     @ExcelProperty("審核狀態")
     private String status;
 
@@ -66,15 +75,7 @@ public class MemberExcel {
     @ExcelProperty("最後更新者")
     private String updateBy;
 
-	@ExcelProperty("生日")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate birthday;
 
-	@ExcelProperty("連絡電話")
-    private String phone;
-
-	@ExcelProperty("聯絡地址")
-    private String contactAddress;
 
 
 	

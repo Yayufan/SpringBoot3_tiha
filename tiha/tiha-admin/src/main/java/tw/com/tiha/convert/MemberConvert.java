@@ -1,5 +1,7 @@
 package tw.com.tiha.convert;
 
+import java.time.LocalDate;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -25,6 +27,7 @@ public interface MemberConvert {
 	
 	MemberVO entityToVO(Member member);
 	
+	@Mapping(target = "birthday", source = "birthday", qualifiedByName = "convertToROCDate")
 	@Mapping(target = "status", source = "status", qualifiedByName = "convertStatus")
 	MemberExcel entityToExcel(Member member);
 	
@@ -40,6 +43,21 @@ public interface MemberConvert {
 		default:
 			return "未知";
 		}
+	}
+	
+	
+	@Named("convertToROCDate")
+	default String convertToMinguoDate(LocalDate birthday) {
+        if (birthday == null) {
+            return null;
+        }
+
+        // 轉換為民國年
+        int minguoYear = birthday.getYear() - 1911;
+
+        // 格式化為民國年日期
+        return String.format("%d-%02d-%02d", minguoYear, birthday.getMonthValue(), birthday.getDayOfMonth());
+    
 	}
 
 	
