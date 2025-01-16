@@ -115,6 +115,7 @@ public class SettingController {
 			mailSender.send(message);
 
 		} catch (MessagingException e) {
+			
 			System.err.println("發送郵件失敗: " + e.getMessage());
 		}
 
