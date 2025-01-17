@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -310,21 +311,55 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 	}
 
+	
 	@Override
 	public void downloadExcel(HttpServletResponse response) throws IOException {
+
 		response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 		response.setCharacterEncoding("utf-8");
 		// 这里URLEncoder.encode可以防止中文乱码 ， 和easyexcel没有关系
 		String fileName = URLEncoder.encode("測試", "UTF-8").replaceAll("\\+", "%20");
 		response.setHeader("Content-disposition", "attachment;filename*=" + fileName + ".xlsx");
 
-		List<Member> allMember = this.getAllMember();
-		List<MemberExcel> excelData = allMember.stream().map(member -> {
+		// 關鍵設置：啟用分塊傳輸編碼，移除Content-Length
+		response.setHeader("Transfer-Encoding", "chunked");
+		response.setHeader("Content-Length", null);
+
+		  // 测量第一部分执行时间
+//        long startTime1 = System.nanoTime();
+        // 第一部分代码
+		
+        List<Member> memberList = baseMapper.selectAllMembersMySelf();
+		
+//		long endTime1 = System.nanoTime();
+		
+//		System.out.println("第一部分执行时间: " + (endTime1 - startTime1) / 1_000_000_000.0 + " 秒");
+		
+		System.out.println("--------接下來轉換數據------------");
+		
+		
+		
+        // 测量第二部分执行时间
+//        long startTime2 = System.nanoTime();
+        
+		List<MemberExcel> excelData = memberList.stream().map(member -> {
 			return memberConvert.entityToExcel(member);
 		}).collect(Collectors.toList());
+		
+//		long endTime2 = System.nanoTime();
+		
+//        System.out.println("第二部分执行时间: " + (endTime2 - startTime2) / 1_000_000_000.0 + " 秒");
+
+		
+		System.out.println("接下來寫入數據");
+		
+		 // 测量第三部分执行时间
+//        long startTime3 = System.nanoTime();
 
 		EasyExcel.write(response.getOutputStream(), MemberExcel.class).sheet("清單").doWrite(excelData);
 
+//		long endTime3 = System.nanoTime();
+//        System.out.println("第三部分执行时间: " + (endTime3 - startTime3) / 1_000_000_000.0 + " 秒");
+	
 	}
-
 }

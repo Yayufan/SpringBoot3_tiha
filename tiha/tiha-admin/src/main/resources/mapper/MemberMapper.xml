@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="tw.com.tiha.mapper.MemberMapper">
+    <!-- 全表查询 -->
+
+<!--
+    <select id="selectAllMembersMySelf" resultType="Member">
+        SELECT * FROM member
+    </select>
+-->
+    
+    <select id="selectAllMembersMySelf" resultType="Member">
+        SELECT member_id, provider, provider_user_id, name, email, password,
+        department, job_title, id_card, gender, gender_other, birthday, phone,
+        status, create_time, create_by, update_time, update_by, is_deleted,
+        contact_address FROM member
+    </select>
+    
+    
+
 
 </mapper>

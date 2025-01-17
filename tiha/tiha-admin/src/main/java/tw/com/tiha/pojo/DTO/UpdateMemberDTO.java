@@ -24,11 +24,11 @@ public class UpdateMemberDTO {
 	@Schema(description = "信箱")
 	private String email;
 
-	@NotBlank
+
 	@Schema(description = "院所(部門)")
 	private String department;
 
-	@NotBlank
+
 	@Schema(description = "職稱")
 	private String jobTitle;
 
@@ -57,7 +57,7 @@ public class UpdateMemberDTO {
 	@TableField("contact_address")
 	private String contactAddress;
 
-	@NotBlank
+
 	@Schema(description = "狀態")
 	private String status;
 

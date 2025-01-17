@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.apache.ibatis.type.JdbcType;
+
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -33,47 +35,47 @@ public class Member implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	@TableId("member_id")
+	@TableId(value="member_id")
 	private Long memberId;
 
 	@Schema(description = "社交帳號登入提供商")
-	@TableField("provider")
+	@TableField(value="provider" )
 	private String provider;
 
 	@Schema(description = "社交帳號使用者ID")
-	@TableField("provider_user_id")
+	@TableField(value="provider_user_id" )
 	private String providerUserId;
 
 	@Schema(description = "姓名")
-	@TableField("name")
+	@TableField(value="name")
 	private String name;
 
 	@Schema(description = "信箱")
-	@TableField("email")
+	@TableField(value="email")
 	private String email;
 
 	@Schema(description = "密碼")
-	@TableField("password")
+	@TableField(value="password")
 	private String password;
 
 	@Schema(description = "院所(部門)")
-	@TableField("department")
+	@TableField(value="department")
 	private String department;
 
 	@Schema(description = "職稱")
-	@TableField("job_title")
+	@TableField(value="job_title")
 	private String jobTitle;
 
 	@Schema(description = "性別")
-	@TableField("gender")
+	@TableField(value="gender")
 	private String gender;
 
 	@Schema(description = "性別補充")
-	@TableField("gender_other")
+	@TableField(value="gender_other")
 	private String genderOther;
 
 	@Schema(description = "國民身分證字號/居留證")
-	@TableField("id_card")
+	@TableField(value="id_card")
 	private String idCard;
 
 	@JsonFormat(pattern = "yyyy-MM-dd")
@@ -82,15 +84,15 @@ public class Member implements Serializable {
 	private LocalDate birthday;
 
 	@Schema(description = "聯絡地址")
-	@TableField("contact_address")
+	@TableField(value="contact_address")
 	private String contactAddress;
 
 	@Schema(description = "電話號碼")
-	@TableField("phone")
+	@TableField(value="phone")
 	private String phone;
 
 	@Schema(description = "狀態,0為待審核,1為審核通過,2為審核不通過")
-	@TableField("status")
+	@TableField(value="status")
 	private String status;
 
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -112,7 +114,8 @@ public class Member implements Serializable {
 	private String updateBy;
 
 	@Schema(description = "邏輯刪除(0為存在,1為刪除)")
-	@TableField("is_deleted")
+//	@TableField(value="is_deleted",jdbcType=JdbcType.VARCHAR)
+	@TableField(value="is_deleted")
 	@TableLogic
 	private String isDeleted;
 }

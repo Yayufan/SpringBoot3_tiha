@@ -1,5 +1,7 @@
 package tw.com.tiha.mapper;
 
+import java.util.List;
+
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import tw.com.tiha.pojo.entity.Member;
@@ -14,4 +16,6 @@ import tw.com.tiha.pojo.entity.Member;
  */
 public interface MemberMapper extends BaseMapper<Member> {
 
+	 // 全表查询
+    List<Member> selectAllMembersMySelf();
 }

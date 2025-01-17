@@ -36,6 +36,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import tw.com.tiha.mapper.MemberMapper;
 import tw.com.tiha.pojo.DTO.ForgetPwdDTO;
 import tw.com.tiha.pojo.DTO.InsertMemberDTO;
 import tw.com.tiha.pojo.DTO.MemberLoginInfo;
@@ -66,6 +67,21 @@ public class MemberController {
 	@Qualifier("businessRedissonClient")
 	private final RedissonClient redissonClient;
 	private final MemberService memberService;
+	
+	private final MemberMapper memberMapper;
+	
+	@GetMapping("/addTestMember")
+	@Operation(summary = "批量生成測試Member")
+	public R<Void> addTestMember(){
+		for (int i = 1; i <= 200000; i++) {
+	       Member member = new Member();
+	       member.setName("測試" + i);
+	       memberMapper.insert(member);
+	    }
+		
+		
+		return R.ok();
+	}
 
 	@GetMapping("/captcha")
 	@Operation(summary = "獲取驗證碼")
@@ -93,6 +109,8 @@ public class MemberController {
 
 	@GetMapping
 	@Operation(summary = "查詢所有會員")
+	@Parameters({
+		@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER), })
 	@SaCheckRole("super-admin")
 	public R<List<Member>> getAllMember() {
 
@@ -251,6 +269,8 @@ public class MemberController {
 	
 	@Operation(summary = "下載同意書excel列表")
 	@SaCheckRole("super-admin")
+	@Parameters({
+		@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER), })
 	@GetMapping("/download-excel")
 	public void downloadExcel(HttpServletResponse response) throws IOException {
 		memberService.downloadExcel(response);
