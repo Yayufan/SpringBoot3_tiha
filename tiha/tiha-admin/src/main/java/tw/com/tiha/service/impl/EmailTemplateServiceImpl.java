@@ -1,22 +1,28 @@
 package tw.com.tiha.service.impl;
 
-import tw.com.tiha.pojo.DTO.InsertEmailTemplateDTO;
-import tw.com.tiha.pojo.DTO.UpdateEmailTemplateDTO;
-import tw.com.tiha.pojo.entity.EmailTemplate;
-import tw.com.tiha.convert.EmailTemplateConvert;
-import tw.com.tiha.mapper.EmailTemplateMapper;
-import tw.com.tiha.service.EmailTemplateService;
+import java.util.List;
+
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+import tw.com.tiha.convert.EmailTemplateConvert;
+import tw.com.tiha.mapper.EmailTemplateMapper;
+import tw.com.tiha.mapper.MemberMapper;
+import tw.com.tiha.pojo.DTO.InsertEmailTemplateDTO;
+import tw.com.tiha.pojo.DTO.SendEmailDTO;
+import tw.com.tiha.pojo.DTO.UpdateEmailTemplateDTO;
+import tw.com.tiha.pojo.entity.EmailTemplate;
+import tw.com.tiha.pojo.entity.Member;
+import tw.com.tiha.service.EmailTemplateService;
 
 /**
  * <p>
@@ -32,6 +38,8 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 		implements EmailTemplateService {
 
 	private final EmailTemplateConvert emailTemplateConvert;
+	private final JavaMailSender mailSender;
+	private final MemberMapper memberMapper;
 
 	@Override
 	public List<EmailTemplate> getAllEmailTemplate() {
@@ -61,6 +69,7 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 	@Override
 	public void updateEmailTemplate(UpdateEmailTemplateDTO updateEmailTemplateDTO) {
 		EmailTemplate emailTemplate = emailTemplateConvert.updateDTOToEntity(updateEmailTemplateDTO);
+		System.out.println("獲取到的emailTemplate" + emailTemplate);
 		baseMapper.updateById(emailTemplate);
 	}
 
@@ -76,6 +85,39 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 		// TODO Auto-generated method stub
 		for (Long emailTemplateId : emailTemplateIdList) {
 			deleteEmailTemplate(emailTemplateId);
+		}
+
+	}
+
+	@Async("taskExecutor") // 指定使用的線程池
+	@Override
+	public void sendEmail(SendEmailDTO sendEmailDTO) {
+		// 開始編寫信件給全部會員
+		List<Member> memberList = memberMapper.selectList(null);
+		
+		for (Member member : memberList) {
+			try {
+				MimeMessage message = mailSender.createMimeMessage();
+				// message.setHeader("Content-Type", "text/html; charset=UTF-8");
+
+				MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+				helper.setTo(member.getName());
+				helper.setSubject(sendEmailDTO.getSubject());
+
+				String htmlContent = sendEmailDTO.getHtmlContent();
+
+				String plainTextContent = sendEmailDTO.getPlainText();
+
+				helper.setText(plainTextContent, false); // 纯文本版本
+				helper.setText(htmlContent, true); // HTML 版本
+
+				mailSender.send(message);
+
+			} catch (MessagingException e) {
+
+				System.err.println("發送郵件失敗: " + e.getMessage());
+			}
 		}
 
 	}

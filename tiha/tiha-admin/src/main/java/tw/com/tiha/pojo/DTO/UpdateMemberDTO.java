@@ -37,7 +37,6 @@ public class UpdateMemberDTO {
 	private String phone;
 	
 	@Schema(description = "性別")
-	@TableField("gender")
 	private String gender;
 
 	@Schema(description = "性別補充")
@@ -50,11 +49,9 @@ public class UpdateMemberDTO {
 
 	@JsonFormat(pattern = "yyyy-MM-dd")
 	@Schema(description = "出生年月日")
-	@TableField(value = "birthday")
 	private LocalDate birthday;
 	
 	@Schema(description = "聯絡地址")
-	@TableField("contact_address")
 	private String contactAddress;
 
 

@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import tw.com.tiha.pojo.DTO.InsertEmailTemplateDTO;
+import tw.com.tiha.pojo.DTO.SendEmailDTO;
 import tw.com.tiha.pojo.DTO.UpdateEmailTemplateDTO;
 import tw.com.tiha.pojo.entity.EmailTemplate;
 import tw.com.tiha.service.EmailTemplateService;
@@ -86,8 +87,9 @@ public class EmailTemplateController {
 			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
 	@SaCheckLogin
 	@PutMapping
-	public R<Void> updateEmailTemplate(@RequestBody UpdateEmailTemplateDTO emailTemplateDTO) {
-		emailTemplateService.updateEmailTemplate(emailTemplateDTO);
+	public R<Void> updateEmailTemplate(@RequestBody UpdateEmailTemplateDTO updateEmailTemplateDTO) {
+		System.out.println("獲取到的DTO: " + updateEmailTemplateDTO);
+		emailTemplateService.updateEmailTemplate(updateEmailTemplateDTO);
 		return R.ok();
 
 	}
@@ -113,5 +115,19 @@ public class EmailTemplateController {
 		return R.ok();
 
 	}
+	
+	
+	@Operation(summary = "寄送信件給所有會員")
+	@Parameters({
+			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
+	@SaCheckLogin
+	@PostMapping("send-email-to-all")
+	public R<Void> sendEmailToAll(@RequestBody SendEmailDTO sendEmailDTO  ) {
+		emailTemplateService.sendEmail(sendEmailDTO);
+		return R.ok();
+
+	}
+	
+	
 
 }

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import tw.com.tiha.pojo.DTO.InsertEmailTemplateDTO;
+import tw.com.tiha.pojo.DTO.SendEmailDTO;
 import tw.com.tiha.pojo.DTO.UpdateEmailTemplateDTO;
 import tw.com.tiha.pojo.entity.EmailTemplate;
 
@@ -70,4 +71,11 @@ public interface EmailTemplateService extends IService<EmailTemplate> {
 	 */
 	void deleteEmailTemplate(List<Long> emailTemplateIdList);
 
+	
+	/**
+	 * 寄信方法
+	 * @param sendEmailDTO
+	 */
+	void sendEmail(SendEmailDTO sendEmailDTO);
+	
 }
