@@ -102,7 +102,7 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 
 				MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-				helper.setTo(member.getName());
+				helper.setTo(member.getEmail());
 				helper.setSubject(sendEmailDTO.getSubject());
 
 				String htmlContent = sendEmailDTO.getHtmlContent();
