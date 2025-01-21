@@ -322,8 +322,8 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		response.setHeader("Content-disposition", "attachment;filename*=" + fileName + ".xlsx");
 
 		// 關鍵設置：啟用分塊傳輸編碼，移除Content-Length
-		response.setHeader("Transfer-Encoding", "chunked");
-		response.setHeader("Content-Length", null);
+//		response.setHeader("Transfer-Encoding", "chunked");
+//		response.setHeader("Content-Length", null);
 
 		  // 测量第一部分执行时间
 //        long startTime1 = System.nanoTime();
@@ -336,7 +336,6 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 //		System.out.println("第一部分执行时间: " + (endTime1 - startTime1) / 1_000_000_000.0 + " 秒");
 		
 		System.out.println("--------接下來轉換數據------------");
-		
 		
 		
         // 测量第二部分执行时间
@@ -356,7 +355,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		 // 测量第三部分执行时间
 //        long startTime3 = System.nanoTime();
 
-		EasyExcel.write(response.getOutputStream(), MemberExcel.class).sheet("清單").doWrite(excelData);
+		EasyExcel.write(response.getOutputStream(), MemberExcel.class).sheet("會員列表").doWrite(excelData);
 
 //		long endTime3 = System.nanoTime();
 //        System.out.println("第三部分执行时间: " + (endTime3 - startTime3) / 1_000_000_000.0 + " 秒");
