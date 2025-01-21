@@ -56,12 +56,12 @@ public class UpdateOrganDonationConsentDTO {
 	@Schema(description = "聯絡地址")
 	private String address;
 
-	@NotBlank
+
 	@Size(max = 255, message = "法定代理人姓名過長")
 	@Schema(description = "法定代理人姓名")
 	private String legalRepresentativeName;
 
-	@NotBlank
+
 	@Size(max = 255, message = "法定代理人身份證字號過長")
 	@Schema(description = "法定代理人身份證字號")
 	private String legalRepresentativeIdCard;
