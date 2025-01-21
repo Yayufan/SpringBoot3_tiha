@@ -7,6 +7,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -92,8 +93,12 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 	@Async("taskExecutor") // 指定使用的線程池
 	@Override
 	public void sendEmail(SendEmailDTO sendEmailDTO) {
-		// 開始編寫信件給全部會員
-		List<Member> memberList = memberMapper.selectList(null);
+		// 開始編寫信件給通過的會員
+		LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
+		
+		memberQueryWrapper.eq(Member::getStatus,"1");
+		
+		List<Member> memberList = memberMapper.selectList(memberQueryWrapper);
 		
 		for (Member member : memberList) {
 			try {
