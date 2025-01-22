@@ -1,5 +1,7 @@
 package tw.com.tiha.mapper;
 
+import java.util.List;
+
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import tw.com.tiha.pojo.entity.OrganDonationConsent;
@@ -14,4 +16,6 @@ import tw.com.tiha.pojo.entity.OrganDonationConsent;
  */
 public interface OrganDonationConsentMapper extends BaseMapper<OrganDonationConsent> {
 
+	List<OrganDonationConsent> selectOrganDonationConsentsByDate(String startDate,String endDate);
+	
 }
