@@ -40,11 +40,9 @@ public class UpdateMemberDTO {
 	private String gender;
 
 	@Schema(description = "性別補充")
-	@TableField("gender_other")
 	private String genderOther;
 
 	@Schema(description = "國民身分證字號/居留證")
-	@TableField("id_card")
 	private String idCard;
 
 	@JsonFormat(pattern = "yyyy-MM-dd")
@@ -54,8 +52,8 @@ public class UpdateMemberDTO {
 	@Schema(description = "聯絡地址")
 	private String contactAddress;
 
-
 	@Schema(description = "狀態")
 	private String status;
-
+	
+	
 }
