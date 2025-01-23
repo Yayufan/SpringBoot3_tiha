@@ -49,14 +49,14 @@ public class EmailTemplateController {
 	private final EmailTemplateService emailTemplateService;
 
 	@GetMapping("{id}")
-	@Operation(summary = "查詢單一信件模板圖片")
+	@Operation(summary = "查詢單一信件模板")
 	public R<EmailTemplate> getEmailTemplate(@PathVariable("id") Long emailTemplateId) {
 		EmailTemplate emailTemplate = emailTemplateService.getEmailTemplate(emailTemplateId);
 		return R.ok(emailTemplate);
 	}
 
 	@GetMapping
-	@Operation(summary = "查詢所有信件模板圖片")
+	@Operation(summary = "查詢所有信件模板")
 	public R<List<EmailTemplate>> getAllEmailTemplate() {
 
 		List<EmailTemplate> emailTemplateList = emailTemplateService.getAllEmailTemplate();
@@ -64,14 +64,14 @@ public class EmailTemplateController {
 	}
 
 	@GetMapping("pagination")
-	@Operation(summary = "查詢所有信件模板圖片(分頁)")
+	@Operation(summary = "查詢所有信件模板(分頁)")
 	public R<IPage<EmailTemplate>> getAllEmailTemplate(@RequestParam Integer page, @RequestParam Integer size) {
 		Page<EmailTemplate> pageInfo = new Page<>(page, size);
 		IPage<EmailTemplate> emailTemplateList = emailTemplateService.getAllEmailTemplate(pageInfo);
 		return R.ok(emailTemplateList);
 	}
 
-	@Operation(summary = "新增信件模板圖片")
+	@Operation(summary = "新增信件模板")
 	@Parameters({
 			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
 	@SaCheckLogin
@@ -82,7 +82,7 @@ public class EmailTemplateController {
 
 	}
 
-	@Operation(summary = "更新信件模板圖片")
+	@Operation(summary = "更新信件模板")
 	@Parameters({
 			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
 	@SaCheckLogin
@@ -94,7 +94,7 @@ public class EmailTemplateController {
 
 	}
 
-	@Operation(summary = "刪除信件模板圖片")
+	@Operation(summary = "刪除信件模板")
 	@Parameters({
 			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
 	@SaCheckLogin
@@ -105,7 +105,7 @@ public class EmailTemplateController {
 
 	}
 
-	@Operation(summary = "批量刪除信件模板圖片")
+	@Operation(summary = "批量刪除信件模板")
 	@Parameters({
 			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
 	@SaCheckLogin

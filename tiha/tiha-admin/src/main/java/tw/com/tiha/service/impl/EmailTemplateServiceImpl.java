@@ -70,7 +70,6 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 	@Override
 	public void updateEmailTemplate(UpdateEmailTemplateDTO updateEmailTemplateDTO) {
 		EmailTemplate emailTemplate = emailTemplateConvert.updateDTOToEntity(updateEmailTemplateDTO);
-		System.out.println("獲取到的emailTemplate" + emailTemplate);
 		baseMapper.updateById(emailTemplate);
 	}
 
