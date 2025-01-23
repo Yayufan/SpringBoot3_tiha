@@ -144,7 +144,7 @@ public class MybatisPlusGeneratedPermissions {
 	        	// 逻辑删除字段名(数据库)
                 .logicDeleteColumnName("is_deleted")
                 // 逻辑删除属性名(实体)
-                .logicDeletePropertyName("isDeleted")
+                .logicDeletePropertyName("deleted")
                 //覆蓋現有文件
 	        	.enableFileOverride()
 	        	//自動填充屬性值,create_time 在新增數據時填充
