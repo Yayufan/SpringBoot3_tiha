@@ -1,10 +1,10 @@
 package tw.com.tiha.service.impl;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -46,6 +46,9 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
 	@Override
 	public Tag getTag(Long tagId) {
 		Tag tag = baseMapper.selectById(tagId);
+		
+		
+		
 		return tag;
 	}
 
