@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.excel.EasyExcel;
@@ -111,19 +112,36 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		return member.getMemberId();
 	}
 
+	@Transactional(isolation = Isolation.SERIALIZABLE)
 	@Override
 	public void updateMember(UpdateMemberDTO updateMemberDTO) {
+		// 轉換資料
 		Member member = memberConvert.updateDTOToEntity(updateMemberDTO);
+
+		// 當送過來要更新的資料 審核狀態status 為1 , 且會員編號尚未有值的情況下
+
+		if (member.getStatus().equals("1") && member.getCode() == null) {
+			// 查詢當下最大的code編號
+			Integer selectMaxMemberCode = baseMapper.selectMaxMemberCode();
+
+			if (selectMaxMemberCode == null) {
+				// 沒最大的編號 則賦值為1
+				member.setCode(1);
+			} else {
+				// 有最大編號的情況,最大的編號 + 1 為新值
+				member.setCode(selectMaxMemberCode + 1);
+			}
+
+		}
+		// 最終更新對象
 		baseMapper.updateById(member);
 
 	}
 
 	@Override
 	public void updateMember(List<UpdateMemberDTO> updateMemberDTOList) {
-		// TODO Auto-generated method stub
 		for (UpdateMemberDTO updateMemberDTO : updateMemberDTOList) {
-			Member member = memberConvert.updateDTOToEntity(updateMemberDTO);
-			baseMapper.updateById(member);
+			updateMember(updateMemberDTO);
 		}
 
 	}
@@ -311,7 +329,6 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 	}
 
-	
 	@Override
 	public void downloadExcel(HttpServletResponse response) throws IOException {
 
@@ -325,40 +342,38 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 //		response.setHeader("Transfer-Encoding", "chunked");
 //		response.setHeader("Content-Length", null);
 
-		  // 测量第一部分执行时间
+		// 测量第一部分执行时间
 //        long startTime1 = System.nanoTime();
-        // 第一部分代码
-		
-        List<Member> memberList = baseMapper.selectAllMembersMySelf();
-		
+		// 第一部分代码
+
+		List<Member> memberList = baseMapper.selectAllMembersMySelf();
+
 //		long endTime1 = System.nanoTime();
-		
+
 //		System.out.println("第一部分执行时间: " + (endTime1 - startTime1) / 1_000_000_000.0 + " 秒");
-		
+
 		System.out.println("--------接下來轉換數據------------");
-		
-		
-        // 测量第二部分执行时间
+
+		// 测量第二部分执行时间
 //        long startTime2 = System.nanoTime();
-        
+
 		List<MemberExcel> excelData = memberList.stream().map(member -> {
 			return memberConvert.entityToExcel(member);
 		}).collect(Collectors.toList());
-		
+
 //		long endTime2 = System.nanoTime();
-		
+
 //        System.out.println("第二部分执行时间: " + (endTime2 - startTime2) / 1_000_000_000.0 + " 秒");
 
-		
 		System.out.println("接下來寫入數據");
-		
-		 // 测量第三部分执行时间
+
+		// 测量第三部分执行时间
 //        long startTime3 = System.nanoTime();
 
 		EasyExcel.write(response.getOutputStream(), MemberExcel.class).sheet("會員列表").doWrite(excelData);
 
 //		long endTime3 = System.nanoTime();
 //        System.out.println("第三部分执行时间: " + (endTime3 - startTime3) / 1_000_000_000.0 + " 秒");
-	
+
 	}
 }

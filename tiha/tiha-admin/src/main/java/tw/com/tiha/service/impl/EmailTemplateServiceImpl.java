@@ -94,11 +94,11 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 	public void sendEmail(SendEmailDTO sendEmailDTO) {
 		// 開始編寫信件給通過的會員
 		LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
-		
-		memberQueryWrapper.eq(Member::getStatus,"1");
-		
+
+		memberQueryWrapper.eq(Member::getStatus, "1");
+
 		List<Member> memberList = memberMapper.selectList(memberQueryWrapper);
-		
+
 		for (Member member : memberList) {
 			try {
 				MimeMessage message = mailSender.createMimeMessage();
@@ -110,8 +110,18 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 				helper.setSubject(sendEmailDTO.getSubject());
 
 				String htmlContent = sendEmailDTO.getHtmlContent();
-
 				String plainTextContent = sendEmailDTO.getPlainText();
+
+				// 替換 {{memberName}} 和 {{memberCode}} 為真正的會員數據
+
+				// 先做null值判斷,避免寄送缺失資訊
+				String memberName = member.getName() != null ? member.getName() : "";
+				String memberCode = member.getCode() != null ? String.valueOf(member.getCode()) : "";
+
+				htmlContent = htmlContent.replace("{{memberName}}", memberName).replace("{{memberCode}}", memberCode);
+
+				plainTextContent = plainTextContent.replace("{{memberName}}", memberName).replace("{{memberCode}}",
+						memberCode);
 
 				helper.setText(plainTextContent, false); // 纯文本版本
 				helper.setText(htmlContent, true); // HTML 版本

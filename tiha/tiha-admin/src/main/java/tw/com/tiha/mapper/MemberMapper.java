@@ -2,6 +2,8 @@ package tw.com.tiha.mapper;
 
 import java.util.List;
 
+import org.apache.ibatis.annotations.Select;
+
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import tw.com.tiha.pojo.entity.Member;
@@ -16,6 +18,16 @@ import tw.com.tiha.pojo.entity.Member;
  */
 public interface MemberMapper extends BaseMapper<Member> {
 
-	 // 全表查询
+	/**
+	 * 全表查询
+	 * @return
+	 */
     List<Member> selectAllMembersMySelf();
+    
+    /**
+     * 查詢當前最大的 member_code
+     * @return
+     */
+    @Select("SELECT MAX(code) FROM member")
+    Integer selectMaxMemberCode();
 }

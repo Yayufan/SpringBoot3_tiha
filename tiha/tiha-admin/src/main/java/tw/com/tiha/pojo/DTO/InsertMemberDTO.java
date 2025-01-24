@@ -51,6 +51,9 @@ public class InsertMemberDTO {
 	@Schema(description = "電話號碼")
 	private String phone;
 	
+	@Schema(description = "會員編號 , 顯示給用戶時要加HA")
+	private Integer code;
+	
 	@NotBlank
 	@Schema(description = "驗證碼key")
 	private String verificationKey;

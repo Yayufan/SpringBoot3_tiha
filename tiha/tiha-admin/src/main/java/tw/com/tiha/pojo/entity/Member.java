@@ -90,6 +90,11 @@ public class Member implements Serializable {
 	@Schema(description = "電話號碼")
 	@TableField(value="phone")
 	private String phone;
+	
+	@Schema(description = "會員編號 , 顯示給用戶時要加HA")
+	@TableField(value="code")
+	private Integer code;
+	
 
 	@Schema(description = "狀態,0為待審核,1為審核通過,2為審核不通過")
 	@TableField(value="status")

@@ -36,6 +36,9 @@ public class UpdateMemberDTO {
 	@Schema(description = "電話號碼")
 	private String phone;
 	
+	@Schema(description = "會員編號 , 顯示給用戶時要加HA")
+	private Integer code;
+	
 	@Schema(description = "性別")
 	private String gender;
 
