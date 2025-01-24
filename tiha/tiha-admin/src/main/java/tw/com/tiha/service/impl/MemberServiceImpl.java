@@ -119,7 +119,6 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		Member member = memberConvert.updateDTOToEntity(updateMemberDTO);
 
 		// 當送過來要更新的資料 審核狀態status 為1 , 且會員編號尚未有值的情況下
-
 		if (member.getStatus().equals("1") && member.getCode() == null) {
 			// 查詢當下最大的code編號
 			Integer selectMaxMemberCode = baseMapper.selectMaxMemberCode();

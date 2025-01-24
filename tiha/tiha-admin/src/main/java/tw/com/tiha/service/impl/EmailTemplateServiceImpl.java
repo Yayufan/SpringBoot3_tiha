@@ -117,11 +117,14 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 				// 先做null值判斷,避免寄送缺失資訊
 				String memberName = member.getName() != null ? member.getName() : "";
 				String memberCode = member.getCode() != null ? String.valueOf(member.getCode()) : "";
+				// 將 memberCode 格式化為 HA0001, HA0002, ..., HA9999
+				String formattedMemberCode = String.format("HA%04d", memberCode);
 
-				htmlContent = htmlContent.replace("{{memberName}}", memberName).replace("{{memberCode}}", memberCode);
+				htmlContent = htmlContent.replace("{{memberName}}", memberName).replace("{{memberCode}}",
+						formattedMemberCode);
 
 				plainTextContent = plainTextContent.replace("{{memberName}}", memberName).replace("{{memberCode}}",
-						memberCode);
+						formattedMemberCode);
 
 				helper.setText(plainTextContent, false); // 纯文本版本
 				helper.setText(htmlContent, true); // HTML 版本
