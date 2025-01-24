@@ -95,7 +95,8 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 		// 開始編寫信件給通過的會員
 		LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
 
-		memberQueryWrapper.eq(Member::getStatus, "1");
+		// 寄信給狀態為審核通過,且具有MemberCode的會員
+		memberQueryWrapper.eq(Member::getStatus, "1").gt(Member::getCode, 0);
 
 		List<Member> memberList = memberMapper.selectList(memberQueryWrapper);
 
@@ -112,19 +113,15 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 				String htmlContent = sendEmailDTO.getHtmlContent();
 				String plainTextContent = sendEmailDTO.getPlainText();
 
-				// 替換 {{memberName}} 和 {{memberCode}} 為真正的會員數據
-
-				// 先做null值判斷,避免寄送缺失資訊
-				String memberName = member.getName() != null ? member.getName() : "";
-				String memberCode = member.getCode() != null ? String.valueOf(member.getCode()) : "";
 				// 將 memberCode 格式化為 HA0001, HA0002, ..., HA9999
-				String formattedMemberCode = String.format("HA%04d", memberCode);
+				String formattedMemberCode = String.format("HA%04d", member.getCode());
 
-				htmlContent = htmlContent.replace("{{memberName}}", memberName).replace("{{memberCode}}",
+				// 替換 {{memberName}} 和 {{memberCode}} 為真正的會員數據
+				htmlContent = htmlContent.replace("{{memberName}}", member.getName()).replace("{{memberCode}}",
 						formattedMemberCode);
 
-				plainTextContent = plainTextContent.replace("{{memberName}}", memberName).replace("{{memberCode}}",
-						formattedMemberCode);
+				plainTextContent = plainTextContent.replace("{{memberName}}", member.getName())
+						.replace("{{memberCode}}", formattedMemberCode);
 
 				helper.setText(plainTextContent, false); // 纯文本版本
 				helper.setText(htmlContent, true); // HTML 版本
