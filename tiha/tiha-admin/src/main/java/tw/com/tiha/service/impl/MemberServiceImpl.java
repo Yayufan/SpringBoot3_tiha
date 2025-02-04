@@ -496,8 +496,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 	}
 
 	@Override
-	public IPage<MemberTagVO> getAllMemberTagVOByQuery(Page<Member> page, String queryText, String status,
-			List<Long> tags) {
+	public IPage<MemberTagVO> getAllMemberTagVOByQuery(Page<Member> page, String queryText, String status) {
 
 		IPage<MemberTagVO> voPage;
 
@@ -554,14 +553,16 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 		List<Tag> tagList;
 
-		// 在這裡再帶入關於Tag的查詢條件
-		if (!tags.isEmpty()) {
-			// 如果傳來的tags不為空 , 直接使用前端傳來的id列表當作搜尋條件
-			tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tags));
-		} else {
-			// 如果傳來的tags為空 ， 則使用跟memberList關聯的tagIds 查詢
-			tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tagIds));
-		}
+		// 在這裡再帶入關於Tag的查詢條件，
+//		if (!tags.isEmpty()) {
+//			// 如果傳來的tags不為空 , 直接使用前端傳來的id列表當作搜尋條件
+//			tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tags));
+//		} else {
+//			// 如果傳來的tags為空 ， 則使用跟memberList關聯的tagIds 查詢
+//			tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tagIds));
+//		}
+
+		tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tagIds));
 
 		// 8. 將 Tag 按 tagId 歸類
 		Map<Long, Tag> tagMap = tagList.stream().collect(Collectors.toMap(Tag::getTagId, tag -> tag));

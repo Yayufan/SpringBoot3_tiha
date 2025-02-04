@@ -177,10 +177,9 @@ public interface MemberService extends IService<Member> {
 	 * @param page
 	 * @param queryText
 	 * @param status
-	 * @param tags
 	 * @return
 	 */
-	IPage<MemberTagVO> getAllMemberTagVOByQuery(Page<Member> page,String queryText,String status,List<Long> tags);
+	IPage<MemberTagVO> getAllMemberTagVOByQuery(Page<Member> page,String queryText,String status);
 	
 	
 }

@@ -311,7 +311,7 @@ public class MemberController {
 
 		IPage<MemberTagVO> memberList;
 
-		memberList = memberService.getAllMemberTagVOByQuery(pageInfo,queryText, status,tags );
+		memberList = memberService.getAllMemberTagVOByQuery(pageInfo,queryText, status );
 
 		return R.ok(memberList);
 	}
