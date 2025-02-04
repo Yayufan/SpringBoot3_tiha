@@ -17,11 +17,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import lombok.RequiredArgsConstructor;
+import tw.com.tiha.pojo.DTO.AddMemberToTagDTO;
 import tw.com.tiha.pojo.DTO.InsertTagDTO;
 import tw.com.tiha.pojo.DTO.UpdateTagDTO;
 import tw.com.tiha.pojo.entity.Tag;
@@ -97,6 +99,17 @@ public class TagController {
 	@DeleteMapping("{id}")
 	public R<Void> deleteTag(@PathVariable("id") Long tagId) {
 		tagService.deleteTag(tagId);
+		return R.ok();
+
+	}
+	
+	@Operation(summary = "為標籤 新增/更新/刪除 複數用戶")
+	@Parameters({
+			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
+	@SaCheckRole("super-admin")
+	@PutMapping("member")
+	public R<Void> assignMemberToTag(@Validated @RequestBody AddMemberToTagDTO addMemberToTagDTO) {
+		tagService.assignMemberToTag(addMemberToTagDTO.getTargetMemberIdList(),addMemberToTagDTO.getTagId());
 		return R.ok();
 
 	}

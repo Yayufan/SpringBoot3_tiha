@@ -40,7 +40,7 @@ public interface MemberService extends IService<Member> {
 	 * @return
 	 */
 	IPage<Member> getAllMember(Page<Member> page);
-	
+
 	/**
 	 * 獲取符合查詢條件的所有會員資料(分頁)
 	 * 
@@ -48,7 +48,7 @@ public interface MemberService extends IService<Member> {
 	 * @param status
 	 * @return
 	 */
-	IPage<Member> getAllMemberByStatus(Page<Member> page,String status,String queryText);
+	IPage<Member> getAllMemberByStatus(Page<Member> page, String status, String queryText);
 
 	/**
 	 * 獲取單一會員資料
@@ -64,7 +64,6 @@ public interface MemberService extends IService<Member> {
 	 * @return
 	 */
 	Long getMemberCount();
-	
 
 	/**
 	 * 根據審核狀態，獲取會員資料總數
@@ -80,22 +79,21 @@ public interface MemberService extends IService<Member> {
 	 * @param insertMemberDTO
 	 */
 	Long insertMember(InsertMemberDTO insertMemberDTO);
-	
-	
+
 	/**
 	 * 更新社群軟體登入者的資料
 	 * 
 	 * @param providerRegisterDTO
 	 */
 	void updateProviderMember(ProviderRegisterDTO providerRegisterDTO);
-	
+
 	/**
 	 * 更新會員資料
 	 * 
 	 * @param updateMemberDTO
 	 */
 	void updateMember(UpdateMemberDTO updateMemberDTO);
-	
+
 	/**
 	 * 提供一個簡單的API只負責更改會員的狀態為Approved
 	 * 
@@ -129,23 +127,29 @@ public interface MemberService extends IService<Member> {
 	 * 會員登出
 	 */
 	void logout();
-	
-	
+
 	/**
 	 * 寄信找回密碼
 	 * 
 	 * @param email
-	 * @throws MessagingException 
+	 * @throws MessagingException
 	 */
 	Member forgetPassword(String email) throws MessagingException;
 
-	
 	/**
 	 * 下載同意書的Excel列表
 	 * 
 	 * @param response
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	void downloadExcel(HttpServletResponse response) throws IOException;
-	
+
+	/**
+	 * 為用戶新增/更新/刪除 複數tag
+	 * 
+	 * @param targetTagIdList
+	 * @param memberId
+	 */
+	void assignTagToMember(List<Long> targetTagIdList, Long memberId);
+
 }

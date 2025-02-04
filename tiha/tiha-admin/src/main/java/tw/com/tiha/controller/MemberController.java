@@ -37,6 +37,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import tw.com.tiha.mapper.MemberMapper;
+import tw.com.tiha.pojo.DTO.AddTagToMemberDTO;
 import tw.com.tiha.pojo.DTO.ForgetPwdDTO;
 import tw.com.tiha.pojo.DTO.InsertMemberDTO;
 import tw.com.tiha.pojo.DTO.MemberLoginInfo;
@@ -67,19 +68,18 @@ public class MemberController {
 	@Qualifier("businessRedissonClient")
 	private final RedissonClient redissonClient;
 	private final MemberService memberService;
-	
+
 	private final MemberMapper memberMapper;
-	
+
 	@GetMapping("/addTestMember")
 	@Operation(summary = "批量生成測試Member")
-	public R<Void> addTestMember(){
+	public R<Void> addTestMember() {
 		for (int i = 1; i <= 200000; i++) {
-	       Member member = new Member();
-	       member.setName("測試" + i);
-	       memberMapper.insert(member);
-	    }
-		
-		
+			Member member = new Member();
+			member.setName("測試" + i);
+			memberMapper.insert(member);
+		}
+
 		return R.ok();
 	}
 
@@ -110,7 +110,7 @@ public class MemberController {
 	@GetMapping
 	@Operation(summary = "查詢所有會員")
 	@Parameters({
-		@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER), })
+			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER), })
 	@SaCheckRole("super-admin")
 	public R<List<Member>> getAllMember() {
 
@@ -130,15 +130,13 @@ public class MemberController {
 	@GetMapping("pagination-by-status")
 	@SaCheckRole("super-admin")
 	@Operation(summary = "根據會員狀態/查詢文字,查詢符合的所有器捐同意書(分頁)")
-	public R<IPage<Member>> getAllMemberByQuery(@RequestParam Integer page,
-			@RequestParam Integer size, @RequestParam(required = false) String status,
-			@RequestParam(required = false) String queryText) {
+	public R<IPage<Member>> getAllMemberByQuery(@RequestParam Integer page, @RequestParam Integer size,
+			@RequestParam(required = false) String status, @RequestParam(required = false) String queryText) {
 		Page<Member> pageInfo = new Page<>(page, size);
 
 		IPage<Member> memberList;
 
-		memberList = memberService.getAllMemberByStatus(pageInfo, status,
-				queryText);
+		memberList = memberService.getAllMemberByStatus(pageInfo, status, queryText);
 
 		return R.ok(memberList);
 	}
@@ -266,14 +264,25 @@ public class MemberController {
 		boolean loginStatus = StpKit.MEMBER.isLogin();
 		return R.ok(loginStatus);
 	}
-	
+
 	@Operation(summary = "下載同意書excel列表")
 	@SaCheckRole("super-admin")
 	@Parameters({
-		@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER), })
+			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER), })
 	@GetMapping("/download-excel")
 	public void downloadExcel(HttpServletResponse response) throws IOException {
 		memberService.downloadExcel(response);
+	}
+
+	@Operation(summary = "為會員新增/更新/刪除 複數標籤")
+	@Parameters({
+			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
+	@SaCheckRole("super-admin")
+	@PutMapping("tag")
+	public R<Void> assignTagToMember(@Validated @RequestBody AddTagToMemberDTO addTagToMemberDTO) {
+		memberService.assignTagToMember(addTagToMemberDTO.getTargetTagIdList(), addTagToMemberDTO.getMemberId());
+		return R.ok();
+
 	}
 
 }

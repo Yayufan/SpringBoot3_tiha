@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -45,12 +47,13 @@ public class Tag implements Serializable {
 
     @Schema(description = "標籤的狀態, 0為啟用  1為禁用")
     @TableField("status")
-    private Byte status;
+    private Integer status;
 
     @Schema(description = "標籤的顯示顏色")
     @TableField("color")
     private String color;
 
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "創建時間")
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
@@ -59,6 +62,7 @@ public class Tag implements Serializable {
     @TableField("create_by")
     private String createBy;
 
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "最後更新時間")
     @TableField(value = "update_time", fill = FieldFill.UPDATE)
     private LocalDateTime updateTime;

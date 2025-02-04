@@ -2,7 +2,9 @@ package tw.com.tiha.service.impl;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -27,12 +29,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import tw.com.tiha.convert.MemberConvert;
 import tw.com.tiha.mapper.MemberMapper;
+import tw.com.tiha.mapper.MemberTagMapper;
 import tw.com.tiha.pojo.DTO.InsertMemberDTO;
 import tw.com.tiha.pojo.DTO.MemberLoginInfo;
 import tw.com.tiha.pojo.DTO.ProviderRegisterDTO;
 import tw.com.tiha.pojo.DTO.UpdateMemberDTO;
 import tw.com.tiha.pojo.VO.MemberVO;
 import tw.com.tiha.pojo.entity.Member;
+import tw.com.tiha.pojo.entity.MemberTag;
 import tw.com.tiha.pojo.excelPojo.MemberExcel;
 import tw.com.tiha.saToken.StpKit;
 import tw.com.tiha.service.MemberService;
@@ -46,6 +50,8 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 	private final MemberConvert memberConvert;
 	private final JavaMailSender mailSender;
+
+	private final MemberTagMapper memberTagMapper;
 
 	@Override
 	public List<Member> getAllMember() {
@@ -373,6 +379,55 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 //		long endTime3 = System.nanoTime();
 //        System.out.println("第三部分执行时间: " + (endTime3 - startTime3) / 1_000_000_000.0 + " 秒");
+
+	}
+
+	@Transactional
+	@Override
+	public void assignTagToMember(List<Long> targetTagIdList, Long memberId) {
+		// 1. 查詢當前 member 的所有關聯 tag
+		LambdaQueryWrapper<MemberTag> currentQueryWrapper = new LambdaQueryWrapper<>();
+		currentQueryWrapper.eq(MemberTag::getMemberId, memberId);
+
+		List<MemberTag> currentMemberTags = memberTagMapper.selectList(currentQueryWrapper);
+
+		// 2. 提取當前關聯的 tagId Set
+		Set<Long> currentTagIdSet = currentMemberTags.stream().map(MemberTag::getTagId).collect(Collectors.toSet());
+
+		// 3. 對比目標 memberIdList 和當前 memberIdList
+		Set<Long> targetTagIdSet = new HashSet<>(targetTagIdList);
+
+		// 4. 找出需要 刪除 的關聯關係
+		Set<Long> tagsToRemove = new HashSet<>(currentTagIdSet);
+		// 差集：當前有但目標沒有
+		tagsToRemove.removeAll(targetTagIdSet);
+
+		// 5. 找出需要 新增 的關聯關係
+		Set<Long> tagsToAdd = new HashSet<>(targetTagIdSet);
+		// 差集：目標有但當前沒有
+		tagsToAdd.removeAll(currentTagIdSet);
+
+		// 6. 執行刪除操作，如果 需刪除集合 中不為空，則開始刪除
+		if (!tagsToRemove.isEmpty()) {
+			LambdaQueryWrapper<MemberTag> deleteMemberTagWrapper = new LambdaQueryWrapper<>();
+			deleteMemberTagWrapper.eq(MemberTag::getMemberId, memberId).in(MemberTag::getTagId, tagsToRemove);
+			memberTagMapper.delete(deleteMemberTagWrapper);
+		}
+
+		// 7. 執行新增操作，如果 需新增集合 中不為空，則開始新增
+		if (!tagsToAdd.isEmpty()) {
+			List<MemberTag> newMemberTags = tagsToAdd.stream().map(tagId -> {
+				MemberTag memberTag = new MemberTag();
+				memberTag.setTagId(tagId);
+				memberTag.setMemberId(memberId);
+				return memberTag;
+			}).collect(Collectors.toList());
+
+			// 批量插入
+			for (MemberTag memberTag : newMemberTags) {
+				memberTagMapper.insert(memberTag);
+			}
+		}
 
 	}
 }

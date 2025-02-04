@@ -18,8 +18,9 @@ public class InsertTagDTO {
 	private String description;
 
 	@Schema(description = "標籤的狀態, 0為啟用  1為禁用")
-	private Byte status;
+	private Integer status;
 
+	@NotBlank
 	@Schema(description = "標籤的顯示顏色")
 	private String color;
 
