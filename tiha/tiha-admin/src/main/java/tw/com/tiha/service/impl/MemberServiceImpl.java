@@ -2,7 +2,6 @@ package tw.com.tiha.service.impl;
 
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -442,6 +441,8 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 			voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
 			voPage.setRecords(null);
+
+			return voPage;
 		}
 
 		// 4. 批量查詢 MemberTag 關係表，獲取 memberId 对应的 tagId
@@ -452,10 +453,10 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		Map<Long, List<Long>> memberTagMap = memberTagList.stream().collect(Collectors
 				.groupingBy(MemberTag::getMemberId, Collectors.mapping(MemberTag::getTagId, Collectors.toList())));
 
-		// 6. 获取所有 tagId 列表
+		// 6. 獲取所有 tagId 列表
 		List<Long> tagIds = memberTagList.stream().map(MemberTag::getTagId).distinct().collect(Collectors.toList());
 
-		// 7. 批量查询所有的 Tag，如果關聯的tagIds為空, 那就不用查了，直接返回
+		// 7. 批量查詢所有的 Tag，如果關聯的tagIds為空, 那就不用查了，直接返回
 		if (tagIds.isEmpty()) {
 			System.out.println("沒有任何tag關聯,所以直接返回");
 			List<MemberTagVO> memberTagVOList = memberPage.getRecords().stream().map(member -> {
@@ -471,15 +472,15 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		}
 		List<Tag> tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tagIds));
 
-		// 8. 将 Tag 按 tagId 归类
+		// 8. 將 Tag 按 tagId 歸類
 		Map<Long, Tag> tagMap = tagList.stream().collect(Collectors.toMap(Tag::getTagId, tag -> tag));
 
-		// 9. 组装 VO 数据
+		// 9. 組裝 VO 數據
 		List<MemberTagVO> voList = memberPage.getRecords().stream().map(member -> {
 			MemberTagVO vo = memberConvert.entityToMemberTagVO(member);
-			// 获取该 memberId 关联的 tagId 列表
+			// 獲取該 memberId 關聯的 tagId 列表
 			List<Long> relatedTagIds = memberTagMap.getOrDefault(member.getMemberId(), Collections.emptyList());
-			// 获取所有对应的 Tag
+			// 獲取所有對應的 Tag
 			List<Tag> tags = relatedTagIds.stream().map(tagMap::get).filter(Objects::nonNull) // 避免空值
 					.collect(Collectors.toList());
 			Set<Tag> tagSet = new HashSet<>(tags);
@@ -487,11 +488,103 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 			return vo;
 		}).collect(Collectors.toList());
 
-		// 10. 重新封装 VO 的分页对象
+		// 10. 重新封装 VO 的分頁對象
 		voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
 		voPage.setRecords(voList);
 
 		return voPage;
+	}
+
+	@Override
+	public IPage<MemberTagVO> getAllMemberTagVOByQuery(Page<Member> page, String queryText, String status,
+			List<Long> tags) {
+
+		IPage<MemberTagVO> voPage;
+
+		// 1.先基於條件查詢 memberList
+		LambdaQueryWrapper<Member> memberWrapper = new LambdaQueryWrapper<>();
+
+		// 如果 status 不為空字串、空格字串、Null 時才加入篩選條件
+		memberWrapper.eq(StringUtils.isNotBlank(status), Member::getStatus, status)
+				// 當 queryText 不為空字串、空格字串、Null 時才加入篩選條件
+				.and(StringUtils.isNotBlank(queryText), wrapper -> wrapper.like(Member::getName, queryText).or()
+						.like(Member::getIdCard, queryText).or().like(Member::getPhone, queryText).or())
+				.orderByDesc(Member::getMemberId);
+
+		// 2.查詢 MemberPage (分頁)
+		IPage<Member> memberPage = baseMapper.selectPage(page, memberWrapper);
+
+		// 3. 獲取所有 memberId 列表，
+		List<Long> memberIds = memberPage.getRecords().stream().map(Member::getMemberId).collect(Collectors.toList());
+
+		if (memberIds.isEmpty()) {
+			System.out.println("沒有會員,所以直接返回");
+
+			voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
+			voPage.setRecords(null);
+
+			return voPage;
+
+		}
+
+		// 4. 批量查詢 MemberTag 關係表，獲取 memberId 对应的 tagId
+		List<MemberTag> memberTagList = memberTagMapper
+				.selectList(new LambdaQueryWrapper<MemberTag>().in(MemberTag::getMemberId, memberIds));
+
+		// 5. 將 memberId 對應的 tagId 歸類，key 為memberId , value 為 tagIdList
+		Map<Long, List<Long>> memberTagMap = memberTagList.stream().collect(Collectors
+				.groupingBy(MemberTag::getMemberId, Collectors.mapping(MemberTag::getTagId, Collectors.toList())));
+
+		// 6. 獲取所有 tagId 列表
+		List<Long> tagIds = memberTagList.stream().map(MemberTag::getTagId).distinct().collect(Collectors.toList());
+
+		// 7. 批量查询所有的 Tag，如果關聯的tagIds為空, 那就不用查了，直接返回
+		if (tagIds.isEmpty()) {
+			System.out.println("沒有任何tag關聯,所以直接返回");
+			List<MemberTagVO> memberTagVOList = memberPage.getRecords().stream().map(member -> {
+				MemberTagVO vo = memberConvert.entityToMemberTagVO(member);
+				vo.setTagSet(new HashSet<>());
+				return vo;
+			}).collect(Collectors.toList());
+			voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
+			voPage.setRecords(memberTagVOList);
+			return voPage;
+
+		}
+
+		List<Tag> tagList;
+
+		// 在這裡再帶入關於Tag的查詢條件
+		if (!tags.isEmpty()) {
+			// 如果傳來的tags不為空 , 直接使用前端傳來的id列表當作搜尋條件
+			tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tags));
+		} else {
+			// 如果傳來的tags為空 ， 則使用跟memberList關聯的tagIds 查詢
+			tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tagIds));
+		}
+
+		// 8. 將 Tag 按 tagId 歸類
+		Map<Long, Tag> tagMap = tagList.stream().collect(Collectors.toMap(Tag::getTagId, tag -> tag));
+
+		// 9. 組裝 VO 數據
+		List<MemberTagVO> voList = memberPage.getRecords().stream().map(member -> {
+			MemberTagVO vo = memberConvert.entityToMemberTagVO(member);
+			// 獲取該 memberId 關聯的 tagId 列表
+			List<Long> relatedTagIds = memberTagMap.getOrDefault(member.getMemberId(), Collections.emptyList());
+			// 獲取所有對應的 Tag
+			List<Tag> allTags = relatedTagIds.stream().map(tagMap::get).filter(Objects::nonNull) // 避免空值
+					.collect(Collectors.toList());
+			Set<Tag> tagSet = new HashSet<>(allTags);
+			vo.setTagSet(tagSet);
+			return vo;
+		}).collect(Collectors.toList());
+
+		// 10. 重新封装 VO 的分頁對象
+		voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
+		voPage.setRecords(voList);
+
+		return voPage;
+
 	}
 
 	@Transactional

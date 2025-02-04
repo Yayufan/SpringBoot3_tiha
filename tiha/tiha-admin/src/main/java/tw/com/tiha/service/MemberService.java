@@ -171,5 +171,16 @@ public interface MemberService extends IService<Member> {
 	 */
 	IPage<MemberTagVO> getAllMemberTagVO(Page<Member> page);
 	
+	/**
+	 * 根據搜尋條件 獲取會員資料及持有的tag集合(分頁)
+	 * 
+	 * @param page
+	 * @param queryText
+	 * @param status
+	 * @param tags
+	 * @return
+	 */
+	IPage<MemberTagVO> getAllMemberTagVOByQuery(Page<Member> page,String queryText,String status,List<Long> tags);
+	
 	
 }

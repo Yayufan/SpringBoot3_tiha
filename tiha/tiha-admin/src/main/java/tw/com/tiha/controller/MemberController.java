@@ -227,7 +227,7 @@ public class MemberController {
 	@Operation(summary = "會員註冊-信箱密碼")
 	@PostMapping("register")
 	public R<Void> register(@Validate @RequestBody InsertMemberDTO insertMemberDTO) {
-		Long insertMember = memberService.insertMember(insertMemberDTO);
+		memberService.insertMember(insertMemberDTO);
 		return R.ok();
 	}
 
@@ -289,12 +289,31 @@ public class MemberController {
 	@Operation(summary = "查詢所有會員資料及他持有的標籤(分頁)")
 	@SaCheckRole("super-admin")
 	@Parameters({
-		@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
+			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
 	@GetMapping("tag/pagination")
 	public R<IPage<MemberTagVO>> getAllMemberTagVO(@RequestParam Integer page, @RequestParam Integer size) {
 		Page<Member> pageInfo = new Page<>(page, size);
+		
 		IPage<MemberTagVO> memberTagVOPage = memberService.getAllMemberTagVO(pageInfo);
 		return R.ok(memberTagVOPage);
+	}
+
+	@Operation(summary = "根據條件 查詢會員資料及他持有的標籤(分頁)")
+	@SaCheckRole("super-admin")
+	@Parameters({
+			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
+	@GetMapping("tag/pagination-by-query")
+	public R<IPage<MemberTagVO>> getAllMemberTagVOByQuery(@RequestParam Integer page, @RequestParam Integer size,
+			@RequestParam(required = false) String queryText, @RequestParam(required = false) String status,
+			@RequestParam(required = false) List<Long> tags) {
+		
+		Page<Member> pageInfo = new Page<>(page, size);
+
+		IPage<MemberTagVO> memberList;
+
+		memberList = memberService.getAllMemberTagVOByQuery(pageInfo,queryText, status,tags );
+
+		return R.ok(memberList);
 	}
 
 	@Operation(summary = "為會員新增/更新/刪除 複數標籤")
