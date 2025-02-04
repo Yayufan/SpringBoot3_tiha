@@ -10,6 +10,7 @@ import tw.com.tiha.pojo.DTO.InsertMemberDTO;
 import tw.com.tiha.pojo.DTO.MemberLoginInfo;
 import tw.com.tiha.pojo.DTO.ProviderRegisterDTO;
 import tw.com.tiha.pojo.DTO.UpdateMemberDTO;
+import tw.com.tiha.pojo.VO.MemberTagVO;
 import tw.com.tiha.pojo.VO.MemberVO;
 import tw.com.tiha.pojo.entity.Member;
 import tw.com.tiha.pojo.excelPojo.MemberExcel;
@@ -26,6 +27,8 @@ public interface MemberConvert {
 	Member providerRegisterDTO(ProviderRegisterDTO providerRegisterDTO);
 	
 	MemberVO entityToVO(Member member);
+	
+	MemberTagVO entityToMemberTagVO(Member member);
 	
 	@Mapping(target = "birthday", source = "birthday", qualifiedByName = "convertToROCDate")
 	@Mapping(target = "status", source = "status", qualifiedByName = "convertStatus")

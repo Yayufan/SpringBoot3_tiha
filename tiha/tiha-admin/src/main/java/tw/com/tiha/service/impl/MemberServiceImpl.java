@@ -2,8 +2,11 @@ package tw.com.tiha.service.impl;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -30,13 +33,16 @@ import lombok.RequiredArgsConstructor;
 import tw.com.tiha.convert.MemberConvert;
 import tw.com.tiha.mapper.MemberMapper;
 import tw.com.tiha.mapper.MemberTagMapper;
+import tw.com.tiha.mapper.TagMapper;
 import tw.com.tiha.pojo.DTO.InsertMemberDTO;
 import tw.com.tiha.pojo.DTO.MemberLoginInfo;
 import tw.com.tiha.pojo.DTO.ProviderRegisterDTO;
 import tw.com.tiha.pojo.DTO.UpdateMemberDTO;
+import tw.com.tiha.pojo.VO.MemberTagVO;
 import tw.com.tiha.pojo.VO.MemberVO;
 import tw.com.tiha.pojo.entity.Member;
 import tw.com.tiha.pojo.entity.MemberTag;
+import tw.com.tiha.pojo.entity.Tag;
 import tw.com.tiha.pojo.excelPojo.MemberExcel;
 import tw.com.tiha.saToken.StpKit;
 import tw.com.tiha.service.MemberService;
@@ -52,6 +58,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 	private final JavaMailSender mailSender;
 
 	private final MemberTagMapper memberTagMapper;
+	private final TagMapper tagMapper;
 
 	@Override
 	public List<Member> getAllMember() {
@@ -382,13 +389,98 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 	}
 
+	@Override
+	public MemberTagVO getMemberTagVOByMember(Long memberId) {
+
+		// 1.獲取member 資料並轉換成 memberTagVO
+		Member member = baseMapper.selectById(memberId);
+		MemberTagVO memberTagVO = memberConvert.entityToMemberTagVO(member);
+
+		// 2.查詢該member所有關聯的tag
+		LambdaQueryWrapper<MemberTag> memberTagWrapper = new LambdaQueryWrapper<>();
+		memberTagWrapper.eq(MemberTag::getMemberId, memberId);
+		List<MemberTag> memberTagList = memberTagMapper.selectList(memberTagWrapper);
+
+		//如果沒有任何關聯,就可以直接返回了
+		if(memberTagList.isEmpty()) {
+			return memberTagVO;
+		}
+		
+		// 3.獲取到所有memberTag的關聯關係後，提取出tagIdList
+		List<Long> tagIdList = memberTagList.stream().map(memberTag -> memberTag.getTagId())
+				.collect(Collectors.toList());
+
+		// 4.去Tag表中查詢實際的Tag資料，並轉換成Set集合
+		LambdaQueryWrapper<Tag> tagWrapper = new LambdaQueryWrapper<>();
+		tagWrapper.in(Tag::getTagId, tagIdList);
+		List<Tag> tagList = tagMapper.selectList(tagWrapper);
+		Set<Tag> tagSet = new HashSet<>(tagList);
+
+		// 5.最後填入memberTagVO對象並返回
+		memberTagVO.setTagSet(tagSet);
+		return memberTagVO;
+	}
+
+	@Override
+	public IPage<MemberTagVO> getAllMemberTagVO(Page<Member> page) {
+
+		// 1.以member當作基底查詢,越新的擺越前面
+		LambdaQueryWrapper<Member> memberWrapper = new LambdaQueryWrapper<>();
+		memberWrapper.orderByDesc(Member::getMemberId);
+
+		// 2.查詢 MemberPage (分頁)
+		IPage<Member> memberPage = baseMapper.selectPage(page, memberWrapper);
+
+		// 3. 獲取所有 memberId 列表，且如果memberIds為空則直接返回
+		List<Long> memberIds = memberPage.getRecords().stream().map(Member::getMemberId).collect(Collectors.toList());
+		if (memberIds.isEmpty()) {
+			// 如果沒有數據，直接返回空分頁
+			return new Page<>(page.getCurrent(), page.getSize(), 0);
+		}
+
+		// 4. 批量查詢 MemberTag 關係表，獲取 memberId 对应的 tagId
+		List<MemberTag> memberTagList = memberTagMapper
+				.selectList(new LambdaQueryWrapper<MemberTag>().in(MemberTag::getMemberId, memberIds));
+
+		// 5. 將 memberId 對應的 tagId 歸類，key 為memberId , value 為 tagIdList
+		Map<Long, List<Long>> memberTagMap = memberTagList.stream().collect(Collectors
+				.groupingBy(MemberTag::getMemberId, Collectors.mapping(MemberTag::getTagId, Collectors.toList())));
+
+		// 6. 获取所有 tagId 列表
+		List<Long> tagIds = memberTagList.stream().map(MemberTag::getTagId).distinct().collect(Collectors.toList());
+
+		// 7. 批量查询所有的 Tag
+		List<Tag> tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tagIds));
+
+		// 8. 将 Tag 按 tagId 归类
+		Map<Long, Tag> tagMap = tagList.stream().collect(Collectors.toMap(Tag::getTagId, tag -> tag));
+
+		// 9. 组装 VO 数据
+		List<MemberTagVO> voList = memberPage.getRecords().stream().map(member -> {
+			MemberTagVO vo = memberConvert.entityToMemberTagVO(member);
+			// 获取该 memberId 关联的 tagId 列表
+			List<Long> relatedTagIds = memberTagMap.getOrDefault(member.getMemberId(), Collections.emptyList());
+			// 获取所有对应的 Tag
+			List<Tag> tags = relatedTagIds.stream().map(tagMap::get).filter(Objects::nonNull) // 避免空值
+					.collect(Collectors.toList());
+			Set<Tag> tagSet = new HashSet<>(tags);
+			vo.setTagSet(tagSet);
+			return vo;
+		}).collect(Collectors.toList());
+
+		// 10. 重新封装 VO 的分页对象
+		IPage<MemberTagVO> voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
+		voPage.setRecords(voList);
+
+		return voPage;
+	}
+
 	@Transactional
 	@Override
 	public void assignTagToMember(List<Long> targetTagIdList, Long memberId) {
 		// 1. 查詢當前 member 的所有關聯 tag
 		LambdaQueryWrapper<MemberTag> currentQueryWrapper = new LambdaQueryWrapper<>();
 		currentQueryWrapper.eq(MemberTag::getMemberId, memberId);
-
 		List<MemberTag> currentMemberTags = memberTagMapper.selectList(currentQueryWrapper);
 
 		// 2. 提取當前關聯的 tagId Set
@@ -430,4 +522,5 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		}
 
 	}
+
 }

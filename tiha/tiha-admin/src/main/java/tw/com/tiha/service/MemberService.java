@@ -13,6 +13,7 @@ import tw.com.tiha.pojo.DTO.InsertMemberDTO;
 import tw.com.tiha.pojo.DTO.MemberLoginInfo;
 import tw.com.tiha.pojo.DTO.ProviderRegisterDTO;
 import tw.com.tiha.pojo.DTO.UpdateMemberDTO;
+import tw.com.tiha.pojo.VO.MemberTagVO;
 import tw.com.tiha.pojo.VO.MemberVO;
 import tw.com.tiha.pojo.entity.Member;
 
@@ -152,4 +153,23 @@ public interface MemberService extends IService<Member> {
 	 */
 	void assignTagToMember(List<Long> targetTagIdList, Long memberId);
 
+	
+	/**
+	 * 根據memberId，獲取會員資料及持有的tag集合
+	 * 
+	 * @param memberId
+	 * @return
+	 */
+	MemberTagVO getMemberTagVOByMember(Long memberId);
+	
+	
+	/**
+	 * 獲取所有 會員資料及持有的tag集合(分頁)
+	 * 
+	 * @param page
+	 * @return
+	 */
+	IPage<MemberTagVO> getAllMemberTagVO(Page<Member> page);
+	
+	
 }

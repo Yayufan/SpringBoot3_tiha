@@ -43,6 +43,7 @@ import tw.com.tiha.pojo.DTO.InsertMemberDTO;
 import tw.com.tiha.pojo.DTO.MemberLoginInfo;
 import tw.com.tiha.pojo.DTO.ProviderRegisterDTO;
 import tw.com.tiha.pojo.DTO.UpdateMemberDTO;
+import tw.com.tiha.pojo.VO.MemberTagVO;
 import tw.com.tiha.pojo.VO.MemberVO;
 import tw.com.tiha.pojo.entity.Member;
 import tw.com.tiha.saToken.StpKit;
@@ -129,7 +130,7 @@ public class MemberController {
 
 	@GetMapping("pagination-by-status")
 	@SaCheckRole("super-admin")
-	@Operation(summary = "根據會員狀態/查詢文字,查詢符合的所有器捐同意書(分頁)")
+	@Operation(summary = "根據會員狀態/查詢文字,查詢符合的資料(分頁)")
 	public R<IPage<Member>> getAllMemberByQuery(@RequestParam Integer page, @RequestParam Integer size,
 			@RequestParam(required = false) String status, @RequestParam(required = false) String queryText) {
 		Page<Member> pageInfo = new Page<>(page, size);
@@ -272,6 +273,26 @@ public class MemberController {
 	@GetMapping("/download-excel")
 	public void downloadExcel(HttpServletResponse response) throws IOException {
 		memberService.downloadExcel(response);
+	}
+
+	@Operation(summary = "根據會員ID 查詢會員資料及他持有的標籤")
+	@Parameters({
+			@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
+	@SaCheckRole("super-admin")
+	@GetMapping("tag/{id}")
+	public R<MemberTagVO> getMemberTagVOByMember(@PathVariable("id") Long memberId) {
+		MemberTagVO memberTagVOByMember = memberService.getMemberTagVOByMember(memberId);
+		return R.ok(memberTagVOByMember);
+
+	}
+
+	@Operation(summary = "查詢所有會員資料及他持有的標籤(分頁)")
+	@SaCheckRole("super-admin")
+	@GetMapping("tag/pagination")
+	public R<IPage<MemberTagVO>> getAllMemberTagVO(@RequestParam Integer page, @RequestParam Integer size) {
+		Page<Member> pageInfo = new Page<>(page, size);
+		IPage<MemberTagVO> memberTagVOPage = memberService.getAllMemberTagVO(pageInfo);
+		return R.ok(memberTagVOPage);
 	}
 
 	@Operation(summary = "為會員新增/更新/刪除 複數標籤")
