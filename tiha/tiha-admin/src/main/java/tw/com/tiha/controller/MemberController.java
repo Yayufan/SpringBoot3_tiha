@@ -288,6 +288,8 @@ public class MemberController {
 
 	@Operation(summary = "查詢所有會員資料及他持有的標籤(分頁)")
 	@SaCheckRole("super-admin")
+	@Parameters({
+		@Parameter(name = "Authorization", description = "請求頭token,token-value開頭必須為Bearer ", required = true, in = ParameterIn.HEADER) })
 	@GetMapping("tag/pagination")
 	public R<IPage<MemberTagVO>> getAllMemberTagVO(@RequestParam Integer page, @RequestParam Integer size) {
 		Page<Member> pageInfo = new Page<>(page, size);

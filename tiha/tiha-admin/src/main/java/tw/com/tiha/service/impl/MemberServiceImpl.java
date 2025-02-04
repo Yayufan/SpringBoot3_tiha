@@ -401,11 +401,11 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		memberTagWrapper.eq(MemberTag::getMemberId, memberId);
 		List<MemberTag> memberTagList = memberTagMapper.selectList(memberTagWrapper);
 
-		//如果沒有任何關聯,就可以直接返回了
-		if(memberTagList.isEmpty()) {
+		// 如果沒有任何關聯,就可以直接返回了
+		if (memberTagList.isEmpty()) {
 			return memberTagVO;
 		}
-		
+
 		// 3.獲取到所有memberTag的關聯關係後，提取出tagIdList
 		List<Long> tagIdList = memberTagList.stream().map(memberTag -> memberTag.getTagId())
 				.collect(Collectors.toList());
@@ -424,6 +424,8 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 	@Override
 	public IPage<MemberTagVO> getAllMemberTagVO(Page<Member> page) {
 
+		IPage<MemberTagVO> voPage;
+
 		// 1.以member當作基底查詢,越新的擺越前面
 		LambdaQueryWrapper<Member> memberWrapper = new LambdaQueryWrapper<>();
 		memberWrapper.orderByDesc(Member::getMemberId);
@@ -431,11 +433,14 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		// 2.查詢 MemberPage (分頁)
 		IPage<Member> memberPage = baseMapper.selectPage(page, memberWrapper);
 
-		// 3. 獲取所有 memberId 列表，且如果memberIds為空則直接返回
+		// 3. 獲取所有 memberId 列表，
 		List<Long> memberIds = memberPage.getRecords().stream().map(Member::getMemberId).collect(Collectors.toList());
+
 		if (memberIds.isEmpty()) {
-			// 如果沒有數據，直接返回空分頁
-			return new Page<>(page.getCurrent(), page.getSize(), 0);
+			System.out.println("沒有會員,所以直接返回");
+
+			voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
+			voPage.setRecords(null);
 		}
 
 		// 4. 批量查詢 MemberTag 關係表，獲取 memberId 对应的 tagId
@@ -449,7 +454,20 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		// 6. 获取所有 tagId 列表
 		List<Long> tagIds = memberTagList.stream().map(MemberTag::getTagId).distinct().collect(Collectors.toList());
 
-		// 7. 批量查询所有的 Tag
+		// 7. 批量查询所有的 Tag，如果關聯的tagIds為空, 那就不用查了，直接返回
+		if (tagIds.isEmpty()) {
+			System.out.println("沒有任何tag關聯,所以直接返回");
+			List<MemberTagVO> memberTagVOList = memberPage.getRecords().stream().map(member -> {
+				MemberTagVO vo = memberConvert.entityToMemberTagVO(member);
+				vo.setTagSet(null);
+				return vo;
+			}).collect(Collectors.toList());
+			voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
+			voPage.setRecords(memberTagVOList);
+
+			return voPage;
+
+		}
 		List<Tag> tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tagIds));
 
 		// 8. 将 Tag 按 tagId 归类
@@ -469,7 +487,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		}).collect(Collectors.toList());
 
 		// 10. 重新封装 VO 的分页对象
-		IPage<MemberTagVO> voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
+		voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
 		voPage.setRecords(voList);
 
 		return voPage;
