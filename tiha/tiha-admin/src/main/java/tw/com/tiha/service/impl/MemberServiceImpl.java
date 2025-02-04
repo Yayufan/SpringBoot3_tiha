@@ -2,6 +2,7 @@ package tw.com.tiha.service.impl;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -459,7 +460,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 			System.out.println("沒有任何tag關聯,所以直接返回");
 			List<MemberTagVO> memberTagVOList = memberPage.getRecords().stream().map(member -> {
 				MemberTagVO vo = memberConvert.entityToMemberTagVO(member);
-				vo.setTagSet(null);
+				vo.setTagSet(new HashSet<>());
 				return vo;
 			}).collect(Collectors.toList());
 			voPage = new Page<>(page.getCurrent(), page.getSize(), memberPage.getTotal());
