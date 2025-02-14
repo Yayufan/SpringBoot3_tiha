@@ -39,8 +39,6 @@ public class ArticleAttachment implements Serializable {
     @TableField("name")
     private String name;
     
-    
-
     @Schema(description = "檔案類型")
     @TableField("type")
     private String type;
@@ -54,7 +52,7 @@ public class ArticleAttachment implements Serializable {
     private LocalDateTime createTime;
 
     @Schema(description = "創建者")
-    @TableField("create_by")
+    @TableField(value = "create_by", fill = FieldFill.INSERT)
     private String createBy;
 
     @Schema(description = "最後更新時間")
@@ -62,7 +60,7 @@ public class ArticleAttachment implements Serializable {
     private LocalDateTime updateTime;
 
     @Schema(description = "最後更新者")
-    @TableField("update_by")
+    @TableField(value = "update_by", fill = FieldFill.UPDATE)
     private String updateBy;
 
     @Schema(description = "邏輯刪除(0為存在,1為刪除)")
