@@ -1,13 +1,9 @@
 package tw.com.tiha.pojo.excelPojo;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.alibaba.excel.annotation.ExcelProperty;
-import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,7 +13,7 @@ import lombok.Data;
 @Data
 public class MemberExcel {
 	
-	@ExcelProperty("簽署者ID")
+	@ExcelProperty("會員ID")
 	private String memberId;
 
 //	@ExcelProperty("社交帳號登入提供商")
@@ -25,6 +21,9 @@ public class MemberExcel {
 
 //	@ExcelProperty("會員社交帳號UserId")
 //	private String providerUserId;
+	
+	@ExcelProperty("會員編號")
+	private String code;
 
 	@ExcelProperty("會員姓名")
 	private String name;

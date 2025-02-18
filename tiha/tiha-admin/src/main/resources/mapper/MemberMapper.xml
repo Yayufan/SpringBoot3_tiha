@@ -8,12 +8,15 @@
         SELECT * FROM member
     </select>
 -->
-    
+    <!-- 查詢會員所有資料, 篩選條件為未被刪除的檔案 -->
     <select id="selectAllMembersMySelf" resultType="Member">
-        SELECT member_id, provider, provider_user_id, name, email, password,
+        SELECT member_id, provider, provider_user_id, code, name, email, password,
         department, job_title, id_card, gender, gender_other, birthday, phone,
         status, create_time, create_by, update_time, update_by, is_deleted,
-        contact_address FROM member
+        contact_address 
+        FROM member 
+        WHERE is_deleted = 0 
+        ORDER BY code
     </select>
     
     
