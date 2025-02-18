@@ -42,7 +42,7 @@ public interface MemberConvert {
 			return "審核通過";
 		case "0":
 			return "未審核";
-		case "-1":
+		case "2":
 			return "申請駁回";
 		default:
 			return "未知";

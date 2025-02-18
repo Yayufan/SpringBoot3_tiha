@@ -13,8 +13,8 @@ import lombok.Data;
 @Data
 public class MemberExcel {
 	
-	@ExcelProperty("會員ID")
-	private String memberId;
+//	@ExcelProperty("會員ID")
+//	private String memberId;
 
 //	@ExcelProperty("社交帳號登入提供商")
 //	private String provider;
