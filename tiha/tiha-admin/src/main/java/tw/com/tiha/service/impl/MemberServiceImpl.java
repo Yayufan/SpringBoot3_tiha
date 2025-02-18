@@ -86,7 +86,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		memberQueryWrapper.eq(StringUtils.isNotBlank(status), Member::getStatus, status)
 				// 當 queryText 不為空字串、空格字串、Null 時才加入篩選條件
 				.and(StringUtils.isNotBlank(queryText), wrapper -> wrapper.like(Member::getName, queryText).or()
-						.like(Member::getIdCard, queryText).or().like(Member::getPhone, queryText).or())
+						.like(Member::getIdCard, queryText).or().like(Member::getPhone, queryText).or().like(Member::getCode,queryText))
 				.orderByDesc(Member::getMemberId);
 
 		Page<Member> memberList = baseMapper.selectPage(page, memberQueryWrapper);
@@ -507,8 +507,8 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		memberWrapper.eq(StringUtils.isNotBlank(status), Member::getStatus, status)
 				// 當 queryText 不為空字串、空格字串、Null 時才加入篩選條件
 				.and(StringUtils.isNotBlank(queryText), wrapper -> wrapper.like(Member::getName, queryText).or()
-						.like(Member::getIdCard, queryText).or().like(Member::getPhone, queryText).or())
-				.orderByDesc(Member::getMemberId);
+						.like(Member::getIdCard, queryText).or().like(Member::getPhone, queryText).or().like(Member::getCode,queryText))
+				.last("ORDER BY FIELD(status, 1, 0, 2), code ASC, member_id DESC");;
 
 		// 2.查詢 MemberPage (分頁)
 		IPage<Member> memberPage = baseMapper.selectPage(page, memberWrapper);
