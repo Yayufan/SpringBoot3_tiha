@@ -30,4 +30,6 @@ public interface MemberMapper extends BaseMapper<Member> {
      */
     @Select("SELECT MAX(code) FROM member")
     Integer selectMaxMemberCode();
+    
+    
 }
