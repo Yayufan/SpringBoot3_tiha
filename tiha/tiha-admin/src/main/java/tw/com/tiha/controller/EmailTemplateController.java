@@ -123,7 +123,9 @@ public class EmailTemplateController {
 	@SaCheckLogin
 	@PostMapping("send-email-to-all")
 	public R<Void> sendEmailToAll(@RequestBody SendEmailDTO sendEmailDTO  ) {
+		
 		emailTemplateService.sendEmail(sendEmailDTO);
+		
 		return R.ok();
 
 	}

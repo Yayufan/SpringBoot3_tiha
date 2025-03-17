@@ -99,7 +99,7 @@ public class EmailTemplateServiceImpl extends ServiceImpl<EmailTemplateMapper, E
 		memberQueryWrapper.eq(Member::getStatus, "1").gt(Member::getCode, 0);
 
 		List<Member> memberList = memberMapper.selectList(memberQueryWrapper);
-
+		
 		for (Member member : memberList) {
 			try {
 				MimeMessage message = mailSender.createMimeMessage();
