@@ -31,6 +31,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import tw.com.tiha.convert.MemberConvert;
+import tw.com.tiha.mapper.EmailTemplateMapper;
 import tw.com.tiha.mapper.MemberMapper;
 import tw.com.tiha.mapper.MemberTagMapper;
 import tw.com.tiha.mapper.TagMapper;
@@ -40,11 +41,13 @@ import tw.com.tiha.pojo.DTO.ProviderRegisterDTO;
 import tw.com.tiha.pojo.DTO.UpdateMemberDTO;
 import tw.com.tiha.pojo.VO.MemberTagVO;
 import tw.com.tiha.pojo.VO.MemberVO;
+import tw.com.tiha.pojo.entity.EmailTemplate;
 import tw.com.tiha.pojo.entity.Member;
 import tw.com.tiha.pojo.entity.MemberTag;
 import tw.com.tiha.pojo.entity.Tag;
 import tw.com.tiha.pojo.excelPojo.MemberExcel;
 import tw.com.tiha.saToken.StpKit;
+import tw.com.tiha.service.AsyncService;
 import tw.com.tiha.service.MemberService;
 
 @RequiredArgsConstructor
@@ -59,6 +62,9 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 	private final MemberTagMapper memberTagMapper;
 	private final TagMapper tagMapper;
+
+	private final AsyncService asyncService;
+	private final EmailTemplateMapper emailTemplateMapper;
 
 	@Override
 	public List<Member> getAllMember() {
@@ -85,8 +91,9 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		// 如果 status 不為空字串、空格字串、Null 時才加入篩選條件
 		memberQueryWrapper.eq(StringUtils.isNotBlank(status), Member::getStatus, status)
 				// 當 queryText 不為空字串、空格字串、Null 時才加入篩選條件
-				.and(StringUtils.isNotBlank(queryText), wrapper -> wrapper.like(Member::getName, queryText).or()
-						.like(Member::getIdCard, queryText).or().like(Member::getPhone, queryText).or().like(Member::getCode,queryText))
+				.and(StringUtils.isNotBlank(queryText),
+						wrapper -> wrapper.like(Member::getName, queryText).or().like(Member::getIdCard, queryText).or()
+								.like(Member::getPhone, queryText).or().like(Member::getCode, queryText))
 				.orderByDesc(Member::getMemberId);
 
 		Page<Member> memberList = baseMapper.selectPage(page, memberQueryWrapper);
@@ -128,10 +135,12 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 	@Transactional(isolation = Isolation.SERIALIZABLE)
 	@Override
 	public void updateMember(UpdateMemberDTO updateMemberDTO) {
+
 		// 轉換資料
 		Member member = memberConvert.updateDTOToEntity(updateMemberDTO);
 
 		// 當送過來要更新的資料 審核狀態status 為1 , 且會員編號尚未有值的情況下
+		// 這也代表這個會員剛剛通過審核
 		if (member.getStatus().equals("1") && member.getCode() == null) {
 			// 查詢當下最大的code編號
 			Integer selectMaxMemberCode = baseMapper.selectMaxMemberCode();
@@ -143,6 +152,28 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 				// 有最大編號的情況,最大的編號 + 1 為新值
 				member.setCode(selectMaxMemberCode + 1);
 			}
+
+			// 找尋第一封創建的信件模板，通常是審核通過並邀請他加入Line 群組的通知信件
+			LambdaQueryWrapper<EmailTemplate> emailTemplateWrapper = new LambdaQueryWrapper<>();
+			emailTemplateWrapper.orderByAsc(EmailTemplate::getEmailTemplateId).last("LIMIT 1");
+			EmailTemplate firstEmail = emailTemplateMapper.selectOne(emailTemplateWrapper);
+
+			// 將HTML信件 和 純文字信件取出
+			String htmlContent = firstEmail.getHtmlContent();
+			String plainTextContent = firstEmail.getPlainText();
+
+			// 將 memberCode 格式化為 HA0001, HA0002, ..., HA9999
+			String formattedMemberCode = String.format("HA%04d", member.getCode());
+
+			// 替換 {{memberName}} 和 {{memberCode}} 為真正的會員數據
+			htmlContent = htmlContent.replace("{{memberName}}", member.getName()).replace("{{memberCode}}",
+					formattedMemberCode);
+
+			plainTextContent = plainTextContent.replace("{{memberName}}", member.getName()).replace("{{memberCode}}",
+					formattedMemberCode);
+
+			// 寄送一封系統通知信給剛被審核通過的會員
+			asyncService.sendCommonEmail(member.getEmail(), firstEmail.getName(), htmlContent, plainTextContent);
 
 		}
 		// 最終更新對象
@@ -506,9 +537,11 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		// 如果 status 不為空字串、空格字串、Null 時才加入篩選條件
 		memberWrapper.eq(StringUtils.isNotBlank(status), Member::getStatus, status)
 				// 當 queryText 不為空字串、空格字串、Null 時才加入篩選條件
-				.and(StringUtils.isNotBlank(queryText), wrapper -> wrapper.like(Member::getName, queryText).or()
-						.like(Member::getIdCard, queryText).or().like(Member::getPhone, queryText).or().like(Member::getCode,queryText))
-				.last("ORDER BY FIELD(status, 1, 0, 2), code ASC, member_id DESC");;
+				.and(StringUtils.isNotBlank(queryText),
+						wrapper -> wrapper.like(Member::getName, queryText).or().like(Member::getIdCard, queryText).or()
+								.like(Member::getPhone, queryText).or().like(Member::getCode, queryText))
+				.last("ORDER BY FIELD(status, 1, 0, 2), code ASC, member_id DESC");
+		;
 
 		// 2.查詢 MemberPage (分頁)
 		IPage<Member> memberPage = baseMapper.selectPage(page, memberWrapper);
