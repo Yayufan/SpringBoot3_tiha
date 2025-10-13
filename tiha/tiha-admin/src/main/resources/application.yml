@@ -1,8 +1,8 @@
 spring:
   servlet:
     multipart:
-      max-file-size: 20MB
-      max-request-size: 20MB
+      max-file-size: 60MB
+      max-request-size: 100MB
   profiles:
     #  預設還是會先讀取application.yml,但可透過spring.profiles.active,來觸發外部配置,達到多環境
     #  激活外部配置 application-*
