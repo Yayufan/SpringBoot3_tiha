@@ -28,6 +28,13 @@ import tw.com.tiha.pojo.entity.Member;
 public interface MemberService extends IService<Member> {
 
 	/**
+	 * 查詢 身分證字號 是否被註冊過
+	 * @param idCard
+	 * @return
+	 */
+	Boolean existsByIdCard(String idCard);
+	
+	/**
 	 * 獲取全部會員資料
 	 * 
 	 * @return
@@ -78,8 +85,9 @@ public interface MemberService extends IService<Member> {
 	 * 新增會員資料
 	 * 
 	 * @param insertMemberDTO
+	 * @throws Exception 
 	 */
-	Long insertMember(InsertMemberDTO insertMemberDTO);
+	Long insertMember(InsertMemberDTO insertMemberDTO) throws Exception;
 
 	/**
 	 * 更新社群軟體登入者的資料
