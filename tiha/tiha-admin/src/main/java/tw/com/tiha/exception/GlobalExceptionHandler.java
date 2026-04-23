@@ -22,6 +22,20 @@ public class GlobalExceptionHandler {
 	// 全局異常處理,當這個異常沒有被特別處理時,一定會走到全局異常,因為Exception範圍最大
 	// 執行的方法,如果返回data沒有特別的值,統一泛型用Map即可
 
+	
+	/**
+	 * 處理自定義-已經存在的單頁面
+	 * 
+	 * @param exception
+	 * @return
+	 */
+	@ResponseBody
+	@ExceptionHandler(value = ExistPageException.class)
+	public R<Map<String, Object>> existPageException(ExistPageException exception) {
+		String message = exception.getMessage();
+		return R.fail(500, message);
+	}
+	
 	/**
 	 * 超出Spring 設定單個檔案最大上傳大小, 如需調整請去 application.yml ,
 	 * spring.servlet.multipart.max-file-size

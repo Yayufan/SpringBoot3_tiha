@@ -167,9 +167,14 @@ public class MemberController {
 		if (userVerificationCode == null || !redisCode.equals(userVerificationCode.trim().toLowerCase())) {
 			return R.fail("驗證碼不正確");
 		}
-		Long memberId = memberService.insertMember(insertMemberDTO);
-
-		return R.ok(memberId);
+		Long memberId;
+		try {
+			memberId = memberService.insertMember(insertMemberDTO);
+			return R.ok(memberId);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return R.fail(e.getMessage());
+		}
 
 	}
 
@@ -226,7 +231,8 @@ public class MemberController {
 
 	@Operation(summary = "會員註冊-信箱密碼")
 	@PostMapping("register")
-	public R<Void> register(@Validate @RequestBody InsertMemberDTO insertMemberDTO) {
+	public R<Void> register(@Validate @RequestBody InsertMemberDTO insertMemberDTO) throws Exception {
+		System.out.println("路線:會員註冊-信箱密碼");
 		memberService.insertMember(insertMemberDTO);
 		return R.ok();
 	}
@@ -293,7 +299,7 @@ public class MemberController {
 	@GetMapping("tag/pagination")
 	public R<IPage<MemberTagVO>> getAllMemberTagVO(@RequestParam Integer page, @RequestParam Integer size) {
 		Page<Member> pageInfo = new Page<>(page, size);
-		
+
 		IPage<MemberTagVO> memberTagVOPage = memberService.getAllMemberTagVO(pageInfo);
 		return R.ok(memberTagVOPage);
 	}
@@ -306,12 +312,12 @@ public class MemberController {
 	public R<IPage<MemberTagVO>> getAllMemberTagVOByQuery(@RequestParam Integer page, @RequestParam Integer size,
 			@RequestParam(required = false) String queryText, @RequestParam(required = false) String status,
 			@RequestParam(required = false) List<Long> tags) {
-		
+
 		Page<Member> pageInfo = new Page<>(page, size);
 
 		IPage<MemberTagVO> memberList;
 
-		memberList = memberService.getAllMemberTagVOByQuery(pageInfo,queryText, status );
+		memberList = memberService.getAllMemberTagVOByQuery(pageInfo, queryText, status);
 
 		return R.ok(memberList);
 	}

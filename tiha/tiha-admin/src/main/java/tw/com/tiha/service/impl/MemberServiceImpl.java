@@ -67,6 +67,22 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 	private final EmailTemplateMapper emailTemplateMapper;
 
 	@Override
+	public Boolean existsByIdCard(String idCard) {
+		LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
+		memberQueryWrapper.eq(Member::getIdCard, idCard);
+		
+		Long count = baseMapper.selectCount(memberQueryWrapper);
+		
+		if(count > 0 ) {
+			return true;
+		}else {
+			return false;
+		}
+		
+	}
+
+	
+	@Override
 	public List<Member> getAllMember() {
 		// TODO Auto-generated method stub
 		List<Member> memberList = baseMapper.selectList(null);
@@ -92,8 +108,13 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		memberQueryWrapper.eq(StringUtils.isNotBlank(status), Member::getStatus, status)
 				// 當 queryText 不為空字串、空格字串、Null 時才加入篩選條件
 				.and(StringUtils.isNotBlank(queryText),
-						wrapper -> wrapper.like(Member::getName, queryText).or().like(Member::getIdCard, queryText).or()
-								.like(Member::getPhone, queryText).or().like(Member::getCode, queryText))
+						wrapper -> wrapper.like(Member::getName, queryText)
+								.or()
+								.like(Member::getIdCard, queryText)
+								.or()
+								.like(Member::getPhone, queryText)
+								.or()
+								.like(Member::getCode, queryText))
 				.orderByDesc(Member::getMemberId);
 
 		Page<Member> memberList = baseMapper.selectPage(page, memberQueryWrapper);
@@ -125,57 +146,63 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		return memberCount;
 	}
 
+	@Transactional(isolation = Isolation.SERIALIZABLE)
 	@Override
-	public Long insertMember(InsertMemberDTO insertMemberDTO) {
+	public Long insertMember(InsertMemberDTO insertMemberDTO) throws Exception {
 		Member member = memberConvert.insertDTOToEntity(insertMemberDTO);
+		member.setStatus("1");
+		
+		Boolean existsIdCard = this.existsByIdCard(member.getIdCard());
+		
+		// 如果已經被註冊過,則拋出異常
+		if(existsIdCard) {
+			throw new Exception("身分證字號已被註冊過");
+		}
+		
+		// 查詢當下最大的code編號
+		Integer selectMaxMemberCode = baseMapper.selectMaxMemberCode();
+
+		if (selectMaxMemberCode == null) {
+			// 沒最大的編號 則賦值為1
+			member.setCode(1);
+		} else {
+			// 有最大編號的情況,最大的編號 + 1 為新值
+			member.setCode(selectMaxMemberCode + 1);
+		}
+
 		baseMapper.insert(member);
+
+		// 找尋第一封創建的信件模板，通常是審核通過並邀請他加入Line 群組的通知信件
+		LambdaQueryWrapper<EmailTemplate> emailTemplateWrapper = new LambdaQueryWrapper<>();
+		emailTemplateWrapper.orderByAsc(EmailTemplate::getEmailTemplateId).last("LIMIT 1");
+		EmailTemplate firstEmail = emailTemplateMapper.selectOne(emailTemplateWrapper);
+
+		// 將HTML信件 和 純文字信件取出
+		String htmlContent = firstEmail.getHtmlContent();
+		String plainTextContent = firstEmail.getPlainText();
+
+		// 將 memberCode 格式化為 HA0001, HA0002, ..., HA9999
+		String formattedMemberCode = String.format("HA%04d", member.getCode());
+
+		// 替換 {{memberName}} 和 {{memberCode}} 為真正的會員數據
+		htmlContent = htmlContent.replace("{{memberName}}", member.getName())
+				.replace("{{memberCode}}", formattedMemberCode);
+
+		plainTextContent = plainTextContent.replace("{{memberName}}", member.getName())
+				.replace("{{memberCode}}", formattedMemberCode);
+
+		// 寄送一封系統通知信給剛被審核通過的會員
+		asyncService.sendCommonEmail(member.getEmail(), firstEmail.getName(), htmlContent, plainTextContent);
+
 		return member.getMemberId();
 	}
 
-	@Transactional(isolation = Isolation.SERIALIZABLE)
 	@Override
 	public void updateMember(UpdateMemberDTO updateMemberDTO) {
 
 		// 轉換資料
 		Member member = memberConvert.updateDTOToEntity(updateMemberDTO);
 
-		// 當送過來要更新的資料 審核狀態status 為1 , 且會員編號尚未有值的情況下
-		// 這也代表這個會員剛剛通過審核
-		if (member.getStatus().equals("1") && member.getCode() == null) {
-			// 查詢當下最大的code編號
-			Integer selectMaxMemberCode = baseMapper.selectMaxMemberCode();
-
-			if (selectMaxMemberCode == null) {
-				// 沒最大的編號 則賦值為1
-				member.setCode(1);
-			} else {
-				// 有最大編號的情況,最大的編號 + 1 為新值
-				member.setCode(selectMaxMemberCode + 1);
-			}
-
-			// 找尋第一封創建的信件模板，通常是審核通過並邀請他加入Line 群組的通知信件
-			LambdaQueryWrapper<EmailTemplate> emailTemplateWrapper = new LambdaQueryWrapper<>();
-			emailTemplateWrapper.orderByAsc(EmailTemplate::getEmailTemplateId).last("LIMIT 1");
-			EmailTemplate firstEmail = emailTemplateMapper.selectOne(emailTemplateWrapper);
-
-			// 將HTML信件 和 純文字信件取出
-			String htmlContent = firstEmail.getHtmlContent();
-			String plainTextContent = firstEmail.getPlainText();
-
-			// 將 memberCode 格式化為 HA0001, HA0002, ..., HA9999
-			String formattedMemberCode = String.format("HA%04d", member.getCode());
-
-			// 替換 {{memberName}} 和 {{memberCode}} 為真正的會員數據
-			htmlContent = htmlContent.replace("{{memberName}}", member.getName()).replace("{{memberCode}}",
-					formattedMemberCode);
-
-			plainTextContent = plainTextContent.replace("{{memberName}}", member.getName()).replace("{{memberCode}}",
-					formattedMemberCode);
-
-			// 寄送一封系統通知信給剛被審核通過的會員
-			asyncService.sendCommonEmail(member.getEmail(), firstEmail.getName(), htmlContent, plainTextContent);
-
-		}
 		// 最終更新對象
 		baseMapper.updateById(member);
 
@@ -257,8 +284,8 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
 				// 去資料庫找有沒有符合這個供應商id的資料
 				LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
-				memberQueryWrapper.eq(Member::getIdCard, memberLoginInfo.getIdCard()).eq(Member::getPhone,
-						memberLoginInfo.getPhone());
+				memberQueryWrapper.eq(Member::getIdCard, memberLoginInfo.getIdCard())
+						.eq(Member::getPhone, memberLoginInfo.getPhone());
 
 				Member member = baseMapper.selectOne(memberQueryWrapper);
 
@@ -382,41 +409,41 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		response.setHeader("Content-disposition", "attachment;filename*=" + fileName + ".xlsx");
 
 		// 關鍵設置：啟用分塊傳輸編碼，移除Content-Length
-//		response.setHeader("Transfer-Encoding", "chunked");
-//		response.setHeader("Content-Length", null);
+		//		response.setHeader("Transfer-Encoding", "chunked");
+		//		response.setHeader("Content-Length", null);
 
 		// 测量第一部分执行时间
-//        long startTime1 = System.nanoTime();
+		//        long startTime1 = System.nanoTime();
 		// 第一部分代码
 
 		List<Member> memberList = baseMapper.selectAllMembersMySelf();
 
-//		long endTime1 = System.nanoTime();
+		//		long endTime1 = System.nanoTime();
 
-//		System.out.println("第一部分执行时间: " + (endTime1 - startTime1) / 1_000_000_000.0 + " 秒");
+		//		System.out.println("第一部分执行时间: " + (endTime1 - startTime1) / 1_000_000_000.0 + " 秒");
 
 		System.out.println("--------接下來轉換數據------------");
 
 		// 测量第二部分执行时间
-//        long startTime2 = System.nanoTime();
+		//        long startTime2 = System.nanoTime();
 
 		List<MemberExcel> excelData = memberList.stream().map(member -> {
 			return memberConvert.entityToExcel(member);
 		}).collect(Collectors.toList());
 
-//		long endTime2 = System.nanoTime();
+		//		long endTime2 = System.nanoTime();
 
-//        System.out.println("第二部分执行时间: " + (endTime2 - startTime2) / 1_000_000_000.0 + " 秒");
+		//        System.out.println("第二部分执行时间: " + (endTime2 - startTime2) / 1_000_000_000.0 + " 秒");
 
 		System.out.println("接下來寫入數據");
 
 		// 测量第三部分执行时间
-//        long startTime3 = System.nanoTime();
+		//        long startTime3 = System.nanoTime();
 
 		EasyExcel.write(response.getOutputStream(), MemberExcel.class).sheet("會員列表").doWrite(excelData);
 
-//		long endTime3 = System.nanoTime();
-//        System.out.println("第三部分执行时间: " + (endTime3 - startTime3) / 1_000_000_000.0 + " 秒");
+		//		long endTime3 = System.nanoTime();
+		//        System.out.println("第三部分执行时间: " + (endTime3 - startTime3) / 1_000_000_000.0 + " 秒");
 
 	}
 
@@ -438,7 +465,8 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		}
 
 		// 3.獲取到所有memberTag的關聯關係後，提取出tagIdList
-		List<Long> tagIdList = memberTagList.stream().map(memberTag -> memberTag.getTagId())
+		List<Long> tagIdList = memberTagList.stream()
+				.map(memberTag -> memberTag.getTagId())
 				.collect(Collectors.toList());
 
 		// 4.去Tag表中查詢實際的Tag資料，並轉換成Set集合
@@ -481,8 +509,9 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 				.selectList(new LambdaQueryWrapper<MemberTag>().in(MemberTag::getMemberId, memberIds));
 
 		// 5. 將 memberId 對應的 tagId 歸類，key 為memberId , value 為 tagIdList
-		Map<Long, List<Long>> memberTagMap = memberTagList.stream().collect(Collectors
-				.groupingBy(MemberTag::getMemberId, Collectors.mapping(MemberTag::getTagId, Collectors.toList())));
+		Map<Long, List<Long>> memberTagMap = memberTagList.stream()
+				.collect(Collectors.groupingBy(MemberTag::getMemberId,
+						Collectors.mapping(MemberTag::getTagId, Collectors.toList())));
 
 		// 6. 獲取所有 tagId 列表
 		List<Long> tagIds = memberTagList.stream().map(MemberTag::getTagId).distinct().collect(Collectors.toList());
@@ -512,7 +541,9 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 			// 獲取該 memberId 關聯的 tagId 列表
 			List<Long> relatedTagIds = memberTagMap.getOrDefault(member.getMemberId(), Collections.emptyList());
 			// 獲取所有對應的 Tag
-			List<Tag> tags = relatedTagIds.stream().map(tagMap::get).filter(Objects::nonNull) // 避免空值
+			List<Tag> tags = relatedTagIds.stream()
+					.map(tagMap::get)
+					.filter(Objects::nonNull) // 避免空值
 					.collect(Collectors.toList());
 			Set<Tag> tagSet = new HashSet<>(tags);
 			vo.setTagSet(tagSet);
@@ -538,8 +569,13 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		memberWrapper.eq(StringUtils.isNotBlank(status), Member::getStatus, status)
 				// 當 queryText 不為空字串、空格字串、Null 時才加入篩選條件
 				.and(StringUtils.isNotBlank(queryText),
-						wrapper -> wrapper.like(Member::getName, queryText).or().like(Member::getIdCard, queryText).or()
-								.like(Member::getPhone, queryText).or().like(Member::getCode, queryText))
+						wrapper -> wrapper.like(Member::getName, queryText)
+								.or()
+								.like(Member::getIdCard, queryText)
+								.or()
+								.like(Member::getPhone, queryText)
+								.or()
+								.like(Member::getCode, queryText))
 				.last("ORDER BY FIELD(status, 1, 0, 2), code ASC, member_id DESC");
 		;
 
@@ -564,8 +600,9 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 				.selectList(new LambdaQueryWrapper<MemberTag>().in(MemberTag::getMemberId, memberIds));
 
 		// 5. 將 memberId 對應的 tagId 歸類，key 為memberId , value 為 tagIdList
-		Map<Long, List<Long>> memberTagMap = memberTagList.stream().collect(Collectors
-				.groupingBy(MemberTag::getMemberId, Collectors.mapping(MemberTag::getTagId, Collectors.toList())));
+		Map<Long, List<Long>> memberTagMap = memberTagList.stream()
+				.collect(Collectors.groupingBy(MemberTag::getMemberId,
+						Collectors.mapping(MemberTag::getTagId, Collectors.toList())));
 
 		// 6. 獲取所有 tagId 列表
 		List<Long> tagIds = memberTagList.stream().map(MemberTag::getTagId).distinct().collect(Collectors.toList());
@@ -587,13 +624,13 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		List<Tag> tagList;
 
 		// 在這裡再帶入關於Tag的查詢條件，
-//		if (!tags.isEmpty()) {
-//			// 如果傳來的tags不為空 , 直接使用前端傳來的id列表當作搜尋條件
-//			tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tags));
-//		} else {
-//			// 如果傳來的tags為空 ， 則使用跟memberList關聯的tagIds 查詢
-//			tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tagIds));
-//		}
+		//		if (!tags.isEmpty()) {
+		//			// 如果傳來的tags不為空 , 直接使用前端傳來的id列表當作搜尋條件
+		//			tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tags));
+		//		} else {
+		//			// 如果傳來的tags為空 ， 則使用跟memberList關聯的tagIds 查詢
+		//			tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tagIds));
+		//		}
 
 		tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getTagId, tagIds));
 
@@ -606,7 +643,9 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 			// 獲取該 memberId 關聯的 tagId 列表
 			List<Long> relatedTagIds = memberTagMap.getOrDefault(member.getMemberId(), Collections.emptyList());
 			// 獲取所有對應的 Tag
-			List<Tag> allTags = relatedTagIds.stream().map(tagMap::get).filter(Objects::nonNull) // 避免空值
+			List<Tag> allTags = relatedTagIds.stream()
+					.map(tagMap::get)
+					.filter(Objects::nonNull) // 避免空值
 					.collect(Collectors.toList());
 			Set<Tag> tagSet = new HashSet<>(allTags);
 			vo.setTagSet(tagSet);
@@ -668,5 +707,6 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		}
 
 	}
+
 
 }
