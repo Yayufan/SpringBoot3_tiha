@@ -167,6 +167,7 @@ public class MemberController {
 		if (userVerificationCode == null || !redisCode.equals(userVerificationCode.trim().toLowerCase())) {
 			return R.fail("驗證碼不正確");
 		}
+		
 		Long memberId;
 		try {
 			memberId = memberService.insertMember(insertMemberDTO);

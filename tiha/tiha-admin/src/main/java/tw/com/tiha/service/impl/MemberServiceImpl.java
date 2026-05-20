@@ -70,18 +70,17 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 	public Boolean existsByIdCard(String idCard) {
 		LambdaQueryWrapper<Member> memberQueryWrapper = new LambdaQueryWrapper<>();
 		memberQueryWrapper.eq(Member::getIdCard, idCard);
-		
+
 		Long count = baseMapper.selectCount(memberQueryWrapper);
-		
-		if(count > 0 ) {
+
+		if (count > 0) {
 			return true;
-		}else {
+		} else {
 			return false;
 		}
-		
+
 	}
 
-	
 	@Override
 	public List<Member> getAllMember() {
 		// TODO Auto-generated method stub
@@ -146,63 +145,108 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		return memberCount;
 	}
 
-	@Transactional(isolation = Isolation.SERIALIZABLE)
 	@Override
-	public Long insertMember(InsertMemberDTO insertMemberDTO) throws Exception {
+	public Long insertMember(InsertMemberDTO insertMemberDTO) {
 		Member member = memberConvert.insertDTOToEntity(insertMemberDTO);
-		member.setStatus("1");
-		
-		Boolean existsIdCard = this.existsByIdCard(member.getIdCard());
-		
-		// 如果已經被註冊過,則拋出異常
-		if(existsIdCard) {
-			throw new Exception("身分證字號已被註冊過");
-		}
-		
-		// 查詢當下最大的code編號
-		Integer selectMaxMemberCode = baseMapper.selectMaxMemberCode();
-
-		if (selectMaxMemberCode == null) {
-			// 沒最大的編號 則賦值為1
-			member.setCode(1);
-		} else {
-			// 有最大編號的情況,最大的編號 + 1 為新值
-			member.setCode(selectMaxMemberCode + 1);
-		}
-
 		baseMapper.insert(member);
-
-		// 找尋第一封創建的信件模板，通常是審核通過並邀請他加入Line 群組的通知信件
-		LambdaQueryWrapper<EmailTemplate> emailTemplateWrapper = new LambdaQueryWrapper<>();
-		emailTemplateWrapper.orderByAsc(EmailTemplate::getEmailTemplateId).last("LIMIT 1");
-		EmailTemplate firstEmail = emailTemplateMapper.selectOne(emailTemplateWrapper);
-
-		// 將HTML信件 和 純文字信件取出
-		String htmlContent = firstEmail.getHtmlContent();
-		String plainTextContent = firstEmail.getPlainText();
-
-		// 將 memberCode 格式化為 HA0001, HA0002, ..., HA9999
-		String formattedMemberCode = String.format("HA%04d", member.getCode());
-
-		// 替換 {{memberName}} 和 {{memberCode}} 為真正的會員數據
-		htmlContent = htmlContent.replace("{{memberName}}", member.getName())
-				.replace("{{memberCode}}", formattedMemberCode);
-
-		plainTextContent = plainTextContent.replace("{{memberName}}", member.getName())
-				.replace("{{memberCode}}", formattedMemberCode);
-
-		// 寄送一封系統通知信給剛被審核通過的會員
-		asyncService.sendCommonEmail(member.getEmail(), firstEmail.getName(), htmlContent, plainTextContent);
-
 		return member.getMemberId();
 	}
 
+	//	@Transactional(isolation = Isolation.SERIALIZABLE)
+	//	@Override
+	//	public Long insertMember(InsertMemberDTO insertMemberDTO) throws Exception {
+	//		Member member = memberConvert.insertDTOToEntity(insertMemberDTO);
+	//		member.setStatus("1");
+	//
+	//		Boolean existsIdCard = this.existsByIdCard(member.getIdCard());
+	//
+	//		// 如果已經被註冊過,則拋出異常
+	//		if (existsIdCard) {
+	//			throw new Exception("身分證字號已被註冊過");
+	//		}
+	//
+	//		// 查詢當下最大的code編號
+	//		Integer selectMaxMemberCode = baseMapper.selectMaxMemberCode();
+	//
+	//		if (selectMaxMemberCode == null) {
+	//			// 沒最大的編號 則賦值為1
+	//			member.setCode(1);
+	//		} else {
+	//			// 有最大編號的情況,最大的編號 + 1 為新值
+	//			member.setCode(selectMaxMemberCode + 1);
+	//		}
+	//
+	//		baseMapper.insert(member);
+	//
+	//		// 找尋第一封創建的信件模板，通常是審核通過並邀請他加入Line 群組的通知信件
+	//		LambdaQueryWrapper<EmailTemplate> emailTemplateWrapper = new LambdaQueryWrapper<>();
+	//		emailTemplateWrapper.orderByAsc(EmailTemplate::getEmailTemplateId).last("LIMIT 1");
+	//		EmailTemplate firstEmail = emailTemplateMapper.selectOne(emailTemplateWrapper);
+	//
+	//		// 將HTML信件 和 純文字信件取出
+	//		String htmlContent = firstEmail.getHtmlContent();
+	//		String plainTextContent = firstEmail.getPlainText();
+	//
+	//		// 將 memberCode 格式化為 HA0001, HA0002, ..., HA9999
+	//		String formattedMemberCode = String.format("HA%04d", member.getCode());
+	//
+	//		// 替換 {{memberName}} 和 {{memberCode}} 為真正的會員數據
+	//		htmlContent = htmlContent.replace("{{memberName}}", member.getName())
+	//				.replace("{{memberCode}}", formattedMemberCode);
+	//
+	//		plainTextContent = plainTextContent.replace("{{memberName}}", member.getName())
+	//				.replace("{{memberCode}}", formattedMemberCode);
+	//
+	//		// 寄送一封系統通知信給剛被審核通過的會員
+	//		asyncService.sendCommonEmail(member.getEmail(), firstEmail.getName(), htmlContent, plainTextContent);
+	//
+	//		return member.getMemberId();
+	//	}
+
+	@Transactional(isolation = Isolation.SERIALIZABLE)
 	@Override
 	public void updateMember(UpdateMemberDTO updateMemberDTO) {
 
 		// 轉換資料
 		Member member = memberConvert.updateDTOToEntity(updateMemberDTO);
 
+		// 當送過來要更新的資料 審核狀態status 為1 , 且會員編號尚未有值的情況下
+		// 這也代表這個會員剛剛通過審核
+		if (member.getStatus().equals("1") && member.getCode() == null) {
+			// 查詢當下最大的code編號
+			Integer selectMaxMemberCode = baseMapper.selectMaxMemberCode();
+
+			if (selectMaxMemberCode == null) {
+				// 沒最大的編號 則賦值為1
+				member.setCode(1);
+			} else {
+				// 有最大編號的情況,最大的編號 + 1 為新值
+				member.setCode(selectMaxMemberCode + 1);
+			}
+
+			// 找尋第一封創建的信件模板，通常是審核通過並邀請他加入Line 群組的通知信件
+			LambdaQueryWrapper<EmailTemplate> emailTemplateWrapper = new LambdaQueryWrapper<>();
+			emailTemplateWrapper.orderByAsc(EmailTemplate::getEmailTemplateId).last("LIMIT 1");
+			EmailTemplate firstEmail = emailTemplateMapper.selectOne(emailTemplateWrapper);
+
+			// 將HTML信件 和 純文字信件取出
+			String htmlContent = firstEmail.getHtmlContent();
+			String plainTextContent = firstEmail.getPlainText();
+
+			// 將 memberCode 格式化為 HA0001, HA0002, ..., HA9999
+			String formattedMemberCode = String.format("HA%04d", member.getCode());
+
+			// 替換 {{memberName}} 和 {{memberCode}} 為真正的會員數據
+			htmlContent = htmlContent.replace("{{memberName}}", member.getName())
+					.replace("{{memberCode}}", formattedMemberCode);
+
+			plainTextContent = plainTextContent.replace("{{memberName}}", member.getName())
+					.replace("{{memberCode}}", formattedMemberCode);
+
+			// 寄送一封系統通知信給剛被審核通過的會員
+			asyncService.sendCommonEmail(member.getEmail(), firstEmail.getName(), htmlContent, plainTextContent);
+
+		}
 		// 最終更新對象
 		baseMapper.updateById(member);
 
@@ -707,6 +751,5 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 		}
 
 	}
-
 
 }
